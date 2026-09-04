@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koordinatensystem</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            cursor: crosshair;
+        }
+        .sidebar {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transition: 0.2s;
+        }
+        button.active {
+            background-color: #28a745;
+        }
+        .list-box {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+            background: #fafafa;
+            font-size: 13px;
+        }
+        .info {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas" width="600" height="600"></canvas>
+
+        <div class="sidebar">
+            <div class="tool-group">
+                <h3>Modus wählen</h3>
+                <button id="btnPoint" class="active" onclick="setMode('point')">Punkt setzen</button>
+                <button id="btnLine" onclick="setMode('line')">Gerade zeichnen</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>Aktionen</h3>
+                <button onclick="clearAll()" style="background-color: #dc3545;">Alles zurücksetzen</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>Punkte</h3>
+                <div id="pointList" class="list-box">Keine Punkte</div>
+            </div>
+
+            <div class="tool-group">
+                <h3>Geraden</h3>
+                <div id="lineList" class="list-box">Keine Geraden</div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const minCoord = -10;
+    const maxCoord = 10;
+    const range = maxCoord - minCoord; 
+    
+    let canvasSize = canvas.width;
+    let scale = canvasSize / range;
+
+    let mode = 'point'; 
+    let points = [];    
+    let lines = [];     
+    let selectedPointForLine = null;
+
+    function toCanvasX(x) {
+        return (x - minCoord) * scale;
+    }
+
+    function toCanvasY(y) {
+        return canvasSize - (y - minCoord) * scale;
+    }
+
+    function toMathX(pixelX) {
+        return minCoord + (pixelX / scale);
+    }
+
+    function toMathY(pixelY) {
+        return minCoord + ((canvasSize - pixelY) / scale);
+    }
+
+    function drawGrid() {
+        ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+        // Feines Raster (0.5 Schritte)
+        ctx.strokeStyle = '#e9ecef';
+        ctx.lineWidth = 1;
+
+        for (let i = minCoord; i <= maxCoord; i += 0.5) {
+            let cx = toCanvasX(i);
+            let cy = toCanvasY(i);
+
+            ctx.beginPath();
+            ctx.moveTo(cx, 0);
+            ctx.lineTo(cx, canvasSize);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, cy);
+            ctx.lineTo(canvasSize, cy);
+            ctx.stroke();
+        }
+
+        // Haupt-Raster (1er Schritte)
+        ctx.strokeStyle = '#dee2e6';
+        for (let i = minCoord; i <= maxCoord; i += 1) {
+            let cx = toCanvasX(i);
+            let cy = toCanvasY(i);
+
+            ctx.beginPath();
+            ctx.moveTo(cx, 0);
+            ctx.lineTo(cx, canvasSize);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, cy);
+            ctx.lineTo(canvasSize, cy);
+            ctx.stroke();
+        }
+
+        // X- und Y-Achsen
+        ctx.strokeStyle = '#343a40';
+        ctx.lineWidth = 2;
+
+        let xZero = toCanvasX(0);
+        ctx.beginPath();
+        ctx.moveTo(xZero, 0);
+        ctx.lineTo(xZero, canvasSize);
+        ctx.stroke();
+
+        let yZero = toCanvasY(0);
+        ctx.beginPath();
+        ctx.moveTo(0, yZero);
+        ctx.lineTo(canvasSize, yZero);
+        ctx.stroke();
+
+        // Achsenbeschriftung
+        ctx.fillStyle = '#495057';
+        ctx.font = '10px Arial';
+        for (let i = minCoord; i <= maxCoord; i += 2) {
+            if (i !== 0) {
+                ctx.fillText(i, toCanvasX(i) - 6, yZero + 15);
+                ctx.fillText(i, xZero - 20, toCanvasY(i) + 4);
+            }
+        }
+        ctx.fillText("0", xZero - 12, yZero + 12);
+    }
+
+    // Unendliche Geraden zeichnen
+    function drawLines() {
+        ctx.strokeStyle = '#007bff';
+        ctx.lineWidth = 2;
+
+        lines.forEach(line => {
+            let p1 = points[line.p1];
+            let p2 = points[line.p2];
+            if (p1 && p2) {
+                let startX, startY, endX, endY;
+
+                if (p1.x === p2.x) {
+                    // Senkrechte Gerade (vertikal)
+                    startX = p1.x;
+                    startY = minCoord;
+                    endX = p1.x;
+                    endY = maxCoord;
+                } else {
+                    // Allgemeine Geradengleichung: y = m*x + b
+                    let m = (p2.y - p1.y) / (p2.x - p1.x);
+                    let b = p1.y - m * p1.x;
+
+                    // Schnittpunkte mit den Rändern des Koordinatensystems (-10 und +10)
+                    startX = minCoord;
+                    startY = m * startX + b;
+                    endX = maxCoord;
+                    endY = m * endX + b;
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(startX), toCanvasY(startY));
+                ctx.lineTo(toCanvasX(endX), toCanvasY(endY));
+                ctx.stroke();
+            }
+        });
+    }
+
+    function drawPoints() {
+        points.forEach((p, index) => {
+            let cx = toCanvasX(p.x);
+            let cy = toCanvasY(p.y);
+
+            ctx.fillStyle = (mode === 'line' && selectedPointForLine === index) ? '#28a745' : '#dc3545';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = '#212529';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(`P${index + 1}(${p.x}, ${p.y})`, cx + 8, cy - 8);
+        });
+    }
+
+    function redraw() {
+        drawGrid();
+        drawLines();
+        drawPoints();
+    }
+
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const pixelX = e.clientX - rect.left;
+        const pixelY = e.clientY - rect.top;
+
+        let mathX = toMathX(pixelX);
+        let mathY = toMathY(pixelY);
+
+        mathX = Math.round(mathX * 2) / 2;
+        mathY = Math.round(mathY * 2) / 2;
+
+        if (mathX < minCoord || mathX > maxCoord || mathY < minCoord || mathY > maxCoord) {
+            return;
+        }
+
+        if (mode === 'point') {
+            let existingIndex = points.findIndex(p => p.x === mathX && p.y === mathY);
+            if (existingIndex === -1) {
+                points.push({ x: mathX, y: mathY });
+            }
+        } else if (mode === 'line') {
+            let clickedIndex = points.findIndex(p => Math.abs(p.x - mathX) < 0.3 && Math.abs(p.y - mathY) < 0.3);
+
+            if (clickedIndex !== -1) {
+                if (selectedPointForLine === null) {
+                    selectedPointForLine = clickedIndex;
+                } else if (selectedPointForLine !== clickedIndex) {
+                    // Prüfen, ob die zwei Punkte identisch sind (verhindert Division durch 0 bei gleicher X/Y Koordinate)
+                    if (points[selectedPointForLine].x !== points[clickedIndex].x || points[selectedPointForLine].y !== points[clickedIndex].y) {
+                        lines.push({ p1: selectedPointForLine, p2: clickedIndex });
+                    }
+                    selectedPointForLine = null;
+                } else {
+                    selectedPointForLine = null;
+                }
+            }
+        }
+
+        updateUI();
+        redraw();
+    });
+
+    function setMode(newMode) {
+        mode = newMode;
+        selectedPointForLine = null;
+        document.getElementById('btnPoint').classList.toggle('active', mode === 'point');
+        document.getElementById('btnLine').classList.toggle('active', mode === 'line');
+        redraw();
+    }
+
+    function clearAll() {
+        points = [];
+        lines = [];
+        selectedPointForLine = null;
+        updateUI();
+        redraw();
+    }
+
+    function updateUI() {
+        let pListHtml = '';
+        if (points.length === 0) {
+            pListHtml = 'Keine Punkte';
+        } else {
+            points.forEach((p, i) => {
+                pListHtml += `<div>P${i + 1}(${p.x} | ${p.y})</div>`;
+            });
+        }
+        document.getElementById('pointList').innerHTML = pListHtml;
+
+        let lListHtml = '';
+        if (lines.length === 0) {
+            lListHtml = 'Keine Geraden';
+        } else {
+            lines.forEach((l, i) => {
+                lListHtml += `<div>G${i + 1}: durch P${l.p1 + 1} & P${l.p2 + 1}</div>`;
+            });
+        }
+        document.getElementById('lineList').innerHTML = lListHtml;
+    }
+
+    redraw();
+</script>
+
+</body>
+</html>
