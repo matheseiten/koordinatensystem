@@ -3,344 +3,834 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Koordinatensystem</title>
+    <title>Lernerfolgskontrolle Lineare Gleichungen (Version B)</title>
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <!-- KaTeX JS -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
     <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #dc2626;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --success: #16a34a;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
             margin: 0;
             padding: 20px;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
+
         .container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--text);
             display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--text-light);
+        }
+        .status-badge.active { background-color: var(--success); }
+        .status-badge.warning { background-color: var(--danger); }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 850px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
             gap: 20px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        canvas {
-            border: 1px solid #ccc;
-            background-color: #fff;
-            cursor: crosshair;
+
+        .timer-display {
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 5px 0;
+            font-variant-numeric: tabular-nums;
+            color: var(--primary);
         }
-        .sidebar {
-            width: 250px;
+
+        .controls {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
-        .tool-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+
         button {
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            transition: background 0.2s;
+            width: 100%;
         }
-        button:hover {
-            background-color: #0056b3;
-            transition: 0.2s;
+
+        #startBtn { background-color: var(--primary); color: white; }
+        #startBtn:hover { background-color: var(--primary-hover); }
+        #startBtn:disabled { background-color: var(--border); cursor: not-allowed; }
+
+        #stopBtn { background-color: var(--danger); color: white; }
+        #stopBtn:hover { background-color: #b91c1c; }
+        #stopBtn:disabled { background-color: var(--border); cursor: not-allowed; }
+
+        .exam-section {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            background: #fdfdfd;
         }
-        button.active {
-            background-color: #28a745;
+
+        .question-box {
+            display: none;
         }
-        .list-box {
-            max-height: 150px;
+
+        .question-box.active {
+            display: block;
+        }
+
+        .question-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .question-text {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        /* Styling für die Gleichungs-Boxen oben in Frage 1 */
+        .equations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .equation-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .equation-card strong {
+            display: block;
+            color: var(--primary);
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+
+        input:disabled, textarea:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .nav-controls button {
+            background-color: #4b5563;
+            color: white;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            width: auto;
+        }
+        .nav-controls button:hover:not(:disabled) { background-color: #374151; }
+        .nav-controls button:disabled { background-color: var(--border); cursor: not-allowed; }
+
+        .log-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            height: 240px;
             overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 5px;
             background: #fafafa;
-            font-size: 13px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.75rem;
         }
-        .info {
-            font-size: 13px;
-            color: #666;
-            line-height: 1.4;
+
+        .log-entry {
+            padding: 4px 6px;
+            margin-bottom: 3px;
+            border-radius: 4px;
+            border-left: 3px solid var(--text-light);
+        }
+
+        .log-entry.blur, .log-entry.hidden { border-left-color: var(--danger); background: #fef2f2; }
+        .log-entry.focus, .log-entry.visible { border-left-color: var(--success); background: #f0fdf4; }
+        .log-entry.system { border-left-color: var(--primary); background: #eff6ff; }
+
+        .warning-box {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <canvas id="canvas" width="600" height="600"></canvas>
 
-        <div class="sidebar">
-            <div class="tool-group">
-                <h3>Modus wählen</h3>
-                <button id="btnPoint" class="active" onclick="setMode('point')">Punkt setzen</button>
-                <button id="btnLine" onclick="setMode('line')">Gerade zeichnen</button>
+<div class="container">
+    <h1>
+        <span id="statusIndicator" class="status-badge"></span>
+        Lernerfolgskontrolle zu linearen Gleichungen (Version B)
+    </h1>
+
+    <div class="main-layout">
+        <!-- LINKE SPALTE: Timer, Infos & Protokoll -->
+        <div class="left-column">
+            <div class="exam-section" style="padding: 15px;">
+                <div class="timer-display" id="timerDisplay">00:00:00</div>
+                
+                <div class="controls" style="margin-top: 15px;">
+                    <button id="startBtn" onclick="startTimer()">Bearbeitung starten</button>
+                    <button id="stopBtn" onclick="stopTimer()" disabled>Bearbeitung beenden & abgeben</button>
+                </div>
             </div>
 
-            <div class="tool-group">
-                <h3>Aktionen</h3>
-                <button onclick="clearAll()" style="background-color: #dc3545;">Alles zurücksetzen</button>
+            <div class="warning-box">
+                <strong>Hinweis:</strong> Tab- & Fensterwechsel werden protokolliert. Beim Abgeben erfolgt ein E-Mail-Versand an die Lehrkraft.
             </div>
 
-            <div class="tool-group">
-                <h3>Punkte</h3>
-                <div id="pointList" class="list-box">Keine Punkte</div>
+            <div>
+                <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; color: var(--text-light);">Protokoll:</div>
+                <div class="log-container" id="logContainer">
+                    <div class="log-entry system">Bereit. Namen eingeben und starten.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECHTE SPALTE: Name & Fragen -->
+        <div class="right-column">
+            <div class="exam-section" id="nameSection">
+                <div class="question-title">Identifikation</div>
+                <div class="question-text">Trage deinen vollständigen Namen ein. Nach dem Start der Prüfung wird das Feld gesperrt.</div>
+                <input type="text" id="studentNameInput" placeholder="Vor- und Nachname eingeben...">
             </div>
 
-            <div class="tool-group">
-                <h3>Geraden</h3>
-                <div id="lineList" class="list-box">Keine Geraden</div>
-            </div>
+            <div class="exam-section" id="questionsSection" style="display: none;">
+                <!-- Aufgabe 1 -->
+                <div class="question-box active" id="qBox1">
+                    <div class="question-title">Aufgabe 1</div>
+                    <div class="question-text">
+                        Ordne den folgenden Sachverhalten die passenden Gleichungen zu:
+                        
+                        <div class="equations-grid">
+                            <div class="equation-card">
+                                <strong>A</strong>
+                                $2x + y = 30$
+                            </div>
+                            <div class="equation-card">
+                                <strong>B</strong>
+                                $4x + 2y = 30$
+                            </div>
+                            <div class="equation-card">
+                                <strong>C</strong>
+                                $2x \cdot y = 30$
+                            </div>
+                        </div>
 
+                        <strong>Sachverhalte:</strong><br>
+                        a) Das Doppelte einer Zahl multipliziert mit einer anderen Zahl ergibt 30.<br>
+                        b) 30 Kinder werden in 4-Bett-Zimmer und 2-Bett-Zimmer aufgeteilt.<br>
+                        c) Der Umfang eines gleichschenkligen Dreiecks beträgt 30 cm.
+                    </div>
+                    <textarea id="answer1" placeholder="Antworten hier eingeben (z.B. a -> C, ...)..."></textarea>
+                </div>
+
+                <!-- Aufgabe 2 -->
+                <div class="question-box" id="qBox2">
+                    <div class="question-title">Aufgabe 2</div>
+                    <div class="question-text">
+                        Berechne $x$:<br><br>
+                        $$(x+4)(x-1) = (x+6)(x-2)$$
+                    </div>
+                    <textarea id="answer2" placeholder="Rechenweg und Ergebnis hier eingeben..."></textarea>
+                </div>
+
+                <!-- Aufgabe 3 -->
+                <div class="question-box" id="qBox3">
+                    <div class="question-title">Aufgabe 3</div>
+                    <div class="question-text">
+                        Bringe die beiden Gleichungen auf die Form $y = m \cdot x + n$.<br>
+                        Gib deinen Rechenweg mit jeweils 1–3 Äquivalenzumformungen an.<br><br>
+                        a) $2y - 6x + 8 = 0$<br>
+                        b) $3x = y - 6$
+                    </div>
+                    <textarea id="answer3" placeholder="Rechenwege und Lösungen hier eingeben..."></textarea>
+                </div>
+
+                <!-- Aufgabe 4 -->
+                <div class="question-box" id="qBox4">
+                    <div class="question-title">Aufgabe 4</div>
+                    <div class="question-text">
+                        Bestimme grafisch die Lösung des Linearen Gleichungssystems:<br><br>
+                        $y = 0{,}5x + 1$<br>
+                        $y = -2x + 6$<br><br>
+                        <em>Wähle den Modus und klicke in das Koordinatensystem (Rasterabstand 0,5):</em>
+                    </div>
+                    
+                    <!-- Moduswahl-Buttons -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button type="button" id="modePointBtn" onclick="setMode('point')" style="flex: 1; padding: 10px; font-size: 0.9rem; background-color: var(--primary); color: white;">Punkt setzen</button>
+                        <button type="button" id="modeLineBtn" onclick="setMode('line')" style="flex: 1; padding: 10px; font-size: 0.9rem; background-color: var(--text-light); color: white;">Gerade zeichnen</button>
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <canvas id="coordCanvas" width="420" height="420" style="border: 1px solid var(--border); background: #ffffff; cursor: crosshair; border-radius: 6px;"></canvas>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <span id="coordInfo" style="font-size: 0.85rem; color: var(--text-light); font-weight: 500;">Eintragungen: Keine</span>
+                        <button type="button" onclick="clearPoints()" style="width: auto; padding: 6px 12px; font-size: 0.85rem; background-color: var(--danger);">Alles löschen</button>
+                    </div>
+
+                    <textarea id="answer4" placeholder="Lösung hier eingeben..." style="height: 80px;"></textarea>
+                </div>
+
+                <div class="nav-controls">
+                    <button id="prevBtn" onclick="changeQuestion(-1)" disabled>&larr; Vorherige</button>
+                    <span id="questionIndicator" style="font-weight: 600; font-size: 0.9rem; color: var(--text-light);">Frage 1 / 4</span>
+                    <button id="nextBtn" onclick="changeQuestion(1)">Nächste &rarr;</button>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    // KaTeX Auto-Render Initialisierung
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false},
+                {left: "\\(", right: "\\)", display: false},
+                {left: "\\[", right: "\\]", display: true}
+            ]
+        });
+        initCanvas();
+    });
 
-    const minCoord = -10;
-    const maxCoord = 10;
-    const range = maxCoord - minCoord; 
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let isRunning = false;
+    let currentQuestion = 1;
+    let totalQuestions = 4;
+    let logs = [];
+    let currentStudentName = "";
     
-    let canvasSize = canvas.width;
-    let scale = canvasSize / range;
+    let stats = { blur: 0, hidden: 0 };
 
-    let mode = 'point'; 
-    let points = [];    
-    let lines = [];     
-    let selectedPointForLine = null;
+    // Koordinatensystem Variablen für Frage 5
+    let currentMode = 'point'; // 'point' oder 'line'
+    let pointsQ5 = [];
+    let linesQ5 = [];
+    let selectedFirstPointForLine = null;
 
-    function toCanvasX(x) {
-        return (x - minCoord) * scale;
+    const xMin = -2, xMax = 8;
+    const yMin = -2, yMax = 8;
+    let canvas, ctx;
+
+    function setMode(mode) {
+        currentMode = mode;
+        selectedFirstPointForLine = null;
+        document.getElementById('modePointBtn').style.backgroundColor = (mode === 'point') ? 'var(--primary)' : 'var(--text-light)';
+        document.getElementById('modeLineBtn').style.backgroundColor = (mode === 'line') ? 'var(--primary)' : 'var(--text-light)';
+        drawCoordSystem();
+        updateCoordInfo();
     }
 
-    function toCanvasY(y) {
-        return canvasSize - (y - minCoord) * scale;
-    }
+    function initCanvas() {
+        canvas = document.getElementById('coordCanvas');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+        drawCoordSystem();
 
-    function toMathX(pixelX) {
-        return minCoord + (pixelX / scale);
-    }
+        canvas.addEventListener('click', function(event) {
+            if (!isRunning) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
 
-    function toMathY(pixelY) {
-        return minCoord + ((canvasSize - pixelY) / scale);
-    }
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+            const plotWidth = width - 2 * padding;
+            const plotHeight = height - 2 * padding;
 
-    function drawGrid() {
-        ctx.clearRect(0, 0, canvasSize, canvasSize);
+            const mathX = xMin + (mouseX - padding) / plotWidth * (xMax - xMin);
+            const mathY = yMax - (mouseY - padding) / plotHeight * (yMax - yMin);
 
-        // Feines Raster (0.5 Schritte)
-        ctx.strokeStyle = '#e9ecef';
-        ctx.lineWidth = 1;
+            // Snapping auf 0.5 Raster
+            const snapX = Math.round(mathX * 2) / 2;
+            const snapY = Math.round(mathY * 2) / 2;
 
-        for (let i = minCoord; i <= maxCoord; i += 0.5) {
-            let cx = toCanvasX(i);
-            let cy = toCanvasY(i);
-
-            ctx.beginPath();
-            ctx.moveTo(cx, 0);
-            ctx.lineTo(cx, canvasSize);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(0, cy);
-            ctx.lineTo(canvasSize, cy);
-            ctx.stroke();
-        }
-
-        // Haupt-Raster (1er Schritte)
-        ctx.strokeStyle = '#dee2e6';
-        for (let i = minCoord; i <= maxCoord; i += 1) {
-            let cx = toCanvasX(i);
-            let cy = toCanvasY(i);
-
-            ctx.beginPath();
-            ctx.moveTo(cx, 0);
-            ctx.lineTo(cx, canvasSize);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(0, cy);
-            ctx.lineTo(canvasSize, cy);
-            ctx.stroke();
-        }
-
-        // X- und Y-Achsen
-        ctx.strokeStyle = '#343a40';
-        ctx.lineWidth = 2;
-
-        let xZero = toCanvasX(0);
-        ctx.beginPath();
-        ctx.moveTo(xZero, 0);
-        ctx.lineTo(xZero, canvasSize);
-        ctx.stroke();
-
-        let yZero = toCanvasY(0);
-        ctx.beginPath();
-        ctx.moveTo(0, yZero);
-        ctx.lineTo(canvasSize, yZero);
-        ctx.stroke();
-
-        // Achsenbeschriftung
-        ctx.fillStyle = '#495057';
-        ctx.font = '10px Arial';
-        for (let i = minCoord; i <= maxCoord; i += 2) {
-            if (i !== 0) {
-                ctx.fillText(i, toCanvasX(i) - 6, yZero + 15);
-                ctx.fillText(i, xZero - 20, toCanvasY(i) + 4);
-            }
-        }
-        ctx.fillText("0", xZero - 12, yZero + 12);
-    }
-
-    // Unendliche Geraden zeichnen
-    function drawLines() {
-        ctx.strokeStyle = '#007bff';
-        ctx.lineWidth = 2;
-
-        lines.forEach(line => {
-            let p1 = points[line.p1];
-            let p2 = points[line.p2];
-            if (p1 && p2) {
-                let startX, startY, endX, endY;
-
-                if (p1.x === p2.x) {
-                    // Senkrechte Gerade (vertikal)
-                    startX = p1.x;
-                    startY = minCoord;
-                    endX = p1.x;
-                    endY = maxCoord;
-                } else {
-                    // Allgemeine Geradengleichung: y = m*x + b
-                    let m = (p2.y - p1.y) / (p2.x - p1.x);
-                    let b = p1.y - m * p1.x;
-
-                    // Schnittpunkte mit den Rändern des Koordinatensystems (-10 und +10)
-                    startX = minCoord;
-                    startY = m * startX + b;
-                    endX = maxCoord;
-                    endY = m * endX + b;
+            if (snapX >= xMin && snapX <= xMax && snapY >= yMin && snapY <= yMax) {
+                if (currentMode === 'point') {
+                    const existingIndex = pointsQ5.findIndex(p => p.x === snapX && p.y === snapY);
+                    if (existingIndex > -1) {
+                        pointsQ5.splice(existingIndex, 1);
+                    } else {
+                        pointsQ5.push({ x: snapX, y: snapY });
+                    }
+                } else if (currentMode === 'line') {
+                    if (!selectedFirstPointForLine) {
+                        selectedFirstPointForLine = { x: snapX, y: snapY };
+                    } else {
+                        if (selectedFirstPointForLine.x !== snapX || selectedFirstPointForLine.y !== snapY) {
+                            linesQ5.push({ p1: selectedFirstPointForLine, p2: { x: snapX, y: snapY } });
+                            selectedFirstPointForLine = null;
+                        } else {
+                            selectedFirstPointForLine = null; // Abbrechen bei Klick auf selben Punkt
+                        }
+                    }
                 }
-
-                ctx.beginPath();
-                ctx.moveTo(toCanvasX(startX), toCanvasY(startY));
-                ctx.lineTo(toCanvasX(endX), toCanvasY(endY));
-                ctx.stroke();
+                drawCoordSystem();
+                updateCoordInfo();
             }
         });
     }
 
-    function drawPoints() {
-        points.forEach((p, index) => {
-            let cx = toCanvasX(p.x);
-            let cy = toCanvasY(p.y);
+    function drawCoordSystem() {
+        if (!ctx) return;
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 40;
+        const plotWidth = width - 2 * padding;
+        const plotHeight = height - 2 * padding;
 
-            ctx.fillStyle = (mode === 'line' && selectedPointForLine === index) ? '#28a745' : '#dc3545';
+        ctx.clearRect(0, 0, width, height);
+
+        const xRange = xMax - xMin;
+        const yRange = yMax - yMin;
+
+        function toPixelX(x) {
+            return padding + (x - xMin) / xRange * plotWidth;
+        }
+        function toPixelY(y) {
+            return height - padding - (y - yMin) / yRange * plotHeight;
+        }
+
+        // Feinraster (Schritt 0.5)
+        ctx.strokeStyle = '#f1f5f9';
+        ctx.lineWidth = 1;
+        for (let x = xMin; x <= xMax; x += 0.5) {
             ctx.beginPath();
-            ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
-            ctx.fill();
+            ctx.moveTo(toPixelX(x), padding);
+            ctx.lineTo(toPixelX(x), height - padding);
+            ctx.stroke();
+        }
+        for (let y = yMin; y <= yMax; y += 0.5) {
+            ctx.beginPath();
+            ctx.moveTo(padding, toPixelY(y));
+            ctx.lineTo(width - padding, toPixelY(y));
+            ctx.stroke();
+        }
 
-            ctx.fillStyle = '#212529';
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText(`P${index + 1}(${p.x}, ${p.y})`, cx + 8, cy - 8);
+        // Haupt-Raster (Schritt 1.0)
+        ctx.strokeStyle = '#e2e8f0';
+        for (let x = xMin; x <= xMax; x += 1) {
+            ctx.beginPath();
+            ctx.moveTo(toPixelX(x), padding);
+            ctx.lineTo(toPixelX(x), height - padding);
+            ctx.stroke();
+        }
+        for (let y = yMin; y <= yMax; y += 1) {
+            ctx.beginPath();
+            ctx.moveTo(padding, toPixelY(y));
+            ctx.lineTo(width - padding, toPixelY(y));
+            ctx.stroke();
+        }
+
+        // Achsen
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1.5;
+        if (yMin <= 0 && yMax >= 0) {
+            ctx.beginPath();
+            ctx.moveTo(padding, toPixelY(0));
+            ctx.lineTo(width - padding, toPixelY(0));
+            ctx.stroke();
+        }
+        if (xMin <= 0 && xMax >= 0) {
+            ctx.beginPath();
+            ctx.moveTo(toPixelX(0), padding);
+            ctx.lineTo(toPixelX(0), height - padding);
+            ctx.stroke();
+        }
+
+        // Beschriftungen
+        ctx.fillStyle = '#475569';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        for (let x = Math.ceil(xMin); x <= xMax; x += 1) {
+            if (x !== 0) {
+                const px = toPixelX(x);
+                const py = yMin <= 0 && yMax >= 0 ? toPixelY(0) + 4 : height - padding + 4;
+                ctx.fillText(x, px, py);
+            }
+        }
+
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let y = Math.ceil(yMin); y <= yMax; y += 1) {
+            if (y !== 0) {
+                const py = toPixelY(y);
+                const px = xMin <= 0 && xMax >= 0 ? toPixelX(0) - 6 : padding - 6;
+                ctx.fillText(y, px, py);
+            }
+        }
+
+        // Geraden zeichnen
+        linesQ5.forEach(line => {
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            let dx = line.p2.x - line.p1.x;
+            let dy = line.p2.y - line.p1.y;
+            let extP1, extP2;
+
+            if (dx === 0) {
+                extP1 = { x: line.p1.x, y: yMin };
+                extP2 = { x: line.p1.x, y: yMax };
+            } else {
+                let m = dy / dx;
+                let n = line.p1.y - m * line.p1.x;
+                extP1 = { x: xMin, y: m * xMin + n };
+                extP2 = { x: xMax, y: m * xMax + n };
+            }
+            ctx.moveTo(toPixelX(extP1.x), toPixelY(extP1.y));
+            ctx.lineTo(toPixelX(extP2.x), toPixelY(extP2.y));
+            ctx.stroke();
         });
+
+        // Eingezeichnete Punkte zeichnen
+        pointsQ5.forEach(p => {
+            const px = toPixelX(p.x);
+            const py = toPixelY(p.y);
+            ctx.fillStyle = '#2563eb';
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`(${p.x.toFixed(1).replace('.', ',')}|${p.y.toFixed(1).replace('.', ',')})`, px + 8, py - 4);
+        });
+
+        // Ausgewählter erster Punkt für Linie (Vorschau)
+        if (selectedFirstPointForLine) {
+            const px = toPixelX(selectedFirstPointForLine.x);
+            const py = toPixelY(selectedFirstPointForLine.y);
+            ctx.fillStyle = '#dc2626';
+            ctx.beginPath();
+            ctx.arc(px, py, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = '#fef2f2';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
     }
 
-    function redraw() {
-        drawGrid();
-        drawLines();
-        drawPoints();
+    function clearPoints() {
+        pointsQ5 = [];
+        linesQ5 = [];
+        selectedFirstPointForLine = null;
+        drawCoordSystem();
+        updateCoordInfo();
     }
 
-    canvas.addEventListener('click', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const pixelX = e.clientX - rect.left;
-        const pixelY = e.clientY - rect.top;
+    function updateCoordInfo() {
+        const infoSpan = document.getElementById('coordInfo');
+        let parts = [];
+        if (pointsQ5.length > 0) {
+            parts.push("Punkte: " + pointsQ5.map(p => `(${p.x.toFixed(1).replace('.', ',')}|${p.y.toFixed(1).replace('.', ',')})`).join(', '));
+        }
+        if (linesQ5.length > 0) {
+            parts.push("Geraden: " + linesQ5.map(l => `(${l.p1.x.toFixed(1).replace('.', ',')}|${l.p1.y.toFixed(1).replace('.', ',')})→(${l.p2.x.toFixed(1).replace('.', ',')}|${l.p2.y.toFixed(1).replace('.', ',')})`).join('; '));
+        }
+        if (currentMode === 'line' && selectedFirstPointForLine) {
+            parts.push(`[1. Punkt gewählt: (${selectedFirstPointForLine.x.toFixed(1).replace('.', ',')}|${selectedFirstPointForLine.y.toFixed(1).replace('.', ',')}), klicke 2. Punkt]`);
+        }
+        infoSpan.textContent = parts.length > 0 ? parts.join(' | ') : "Eintragungen: Keine";
+    }
 
-        let mathX = toMathX(pixelX);
-        let mathY = toMathY(pixelY);
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const logContainer = document.getElementById('logContainer');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const questionIndicator = document.getElementById('questionIndicator');
+    const nameInput = document.getElementById('studentNameInput');
+    const questionsSection = document.getElementById('questionsSection');
 
-        mathX = Math.round(mathX * 2) / 2;
-        mathY = Math.round(mathY * 2) / 2;
+    function formatTime(totalSeconds) {
+        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(totalSeconds % 60).padStart(2, '0');
+        return `${hrs}:${mins}:${secs}`;
+    }
 
-        if (mathX < minCoord || mathX > maxCoord || mathY < minCoord || mathY > maxCoord) {
+    function addLog(type, message) {
+        const timestamp = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+        const logEntry = {
+            time: timestamp,
+            timerValue: formatTime(secondsElapsed),
+            type: type,
+            message: message
+        };
+        logs.push(logEntry);
+
+        const div = document.createElement('div');
+        div.className = `log-entry ${type}`;
+        div.textContent = `[${timestamp}] (${logEntry.timerValue}) ${message}`;
+        logContainer.appendChild(div);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function startTimer() {
+        const enteredName = nameInput.value.trim();
+
+        if (!enteredName) {
+            alert('Bitte gib erst deinen Namen ein!');
+            nameInput.focus();
             return;
         }
 
-        if (mode === 'point') {
-            let existingIndex = points.findIndex(p => p.x === mathX && p.y === mathY);
-            if (existingIndex === -1) {
-                points.push({ x: mathX, y: mathY });
-            }
-        } else if (mode === 'line') {
-            let clickedIndex = points.findIndex(p => Math.abs(p.x - mathX) < 0.3 && Math.abs(p.y - mathY) < 0.3);
+        if (isRunning) return;
+        
+        currentStudentName = enteredName;
+        isRunning = true;
+        secondsElapsed = 0;
+        logs = [];
+        stats.blur = 0;
+        stats.hidden = 0;
+        
+        nameInput.disabled = true;
+        questionsSection.style.display = 'block';
 
-            if (clickedIndex !== -1) {
-                if (selectedPointForLine === null) {
-                    selectedPointForLine = clickedIndex;
-                } else if (selectedPointForLine !== clickedIndex) {
-                    // Prüfen, ob die zwei Punkte identisch sind (verhindert Division durch 0 bei gleicher X/Y Koordinate)
-                    if (points[selectedPointForLine].x !== points[clickedIndex].x || points[selectedPointForLine].y !== points[clickedIndex].y) {
-                        lines.push({ p1: selectedPointForLine, p2: clickedIndex });
-                    }
-                    selectedPointForLine = null;
-                } else {
-                    selectedPointForLine = null;
-                }
-            }
+        logContainer.innerHTML = '';
+        addLog('system', `Prüfung gestartet für: ${currentStudentName}`);
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        statusIndicator.classList.add('active');
+
+        updateNavButtons();
+        drawCoordSystem();
+
+        timerInterval = setInterval(() => {
+            secondsElapsed++;
+            timerDisplay.textContent = formatTime(secondsElapsed);
+        }, 1000);
+
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    function stopTimer() {
+        if (!isRunning) return;
+        isRunning = false;
+        clearInterval(timerInterval);
+
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        statusIndicator.classList.remove('active');
+        statusIndicator.classList.remove('warning');
+
+        for (let i = 1; i <= totalQuestions; i++) {
+            const el = document.getElementById(`answer${i}`);
+            if (el) el.disabled = true;
         }
 
-        updateUI();
-        redraw();
-    });
+        window.removeEventListener('blur', handleBlur);
+        window.removeEventListener('focus', handleFocus);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
 
-    function setMode(newMode) {
-        mode = newMode;
-        selectedPointForLine = null;
-        document.getElementById('btnPoint').classList.toggle('active', mode === 'point');
-        document.getElementById('btnLine').classList.toggle('active', mode === 'line');
-        redraw();
+        addLog('system', 'Prüfung beendet. Sende Daten...');
+        sendDataToServer();
     }
 
-    function clearAll() {
-        points = [];
-        lines = [];
-        selectedPointForLine = null;
-        updateUI();
-        redraw();
+    function changeQuestion(direction) {
+        if (!isRunning) return;
+        const newQuestion = currentQuestion + direction;
+        if (newQuestion < 1 || newQuestion > totalQuestions) return;
+
+        document.getElementById(`qBox${currentQuestion}`).classList.remove('active');
+        currentQuestion = newQuestion;
+        document.getElementById(`qBox${currentQuestion}`).classList.add('active');
+        
+        questionIndicator.textContent = `Frage ${currentQuestion} / ${totalQuestions}`;
+        updateNavButtons();
+        if (currentQuestion === 4) {
+            drawCoordSystem();
+        }
     }
 
-    function updateUI() {
-        let pListHtml = '';
-        if (points.length === 0) {
-            pListHtml = 'Keine Punkte';
+    function updateNavButtons() {
+        prevBtn.disabled = currentQuestion === 1;
+        nextBtn.disabled = currentQuestion === totalQuestions;
+    }
+
+    function handleBlur() {
+        if (!isRunning) return;
+        stats.blur++;
+        statusIndicator.classList.add('warning');
+        addLog('blur', 'WARNUNG: Fokus verloren (Blur).');
+    }
+
+    function handleFocus() {
+        if (!isRunning) return;
+        statusIndicator.classList.remove('warning');
+        addLog('focus', 'INFO: Fokus wieder da (Focus).');
+    }
+
+    function handleVisibilityChange() {
+        if (!isRunning) return;
+        if (document.hidden) {
+            stats.hidden++;
+            statusIndicator.classList.add('warning');
+            addLog('hidden', 'WARNUNG: Tab unsichtbar (Hidden).');
         } else {
-            points.forEach((p, i) => {
-                pListHtml += `<div>P${i + 1}(${p.x} | ${p.y})</div>`;
-            });
+            statusIndicator.classList.remove('warning');
+            addLog('visible', 'INFO: Tab wieder sichtbar (Visible).');
         }
-        document.getElementById('pointList').innerHTML = pListHtml;
-
-        let lListHtml = '';
-        if (lines.length === 0) {
-            lListHtml = 'Keine Geraden';
-        } else {
-            lines.forEach((l, i) => {
-                lListHtml += `<div>G${i + 1}: durch P${l.p1 + 1} & P${l.p2 + 1}</div>`;
-            });
-        }
-        document.getElementById('lineList').innerHTML = lListHtml;
     }
 
-    redraw();
+    function sendDataToServer() {
+        let answersData = {};
+        for (let i = 1; i <= totalQuestions; i++) {
+            const el = document.getElementById(`answer${i}`);
+            let val = el ? el.value.trim() : "";
+            if (i === 4) {
+                let ptsStr = pointsQ5.map(p => `(${p.x}|${p.y})`).join(', ');
+                let linesStr = linesQ5.map(l => `(${l.p1.x}|${l.p1.y}) zu (${l.p2.x}|${l.p2.y})`).join(', ');
+                val = `Punkte: [${ptsStr}] | Geraden: [${linesStr}] | Notiz: ${val}`;
+            }
+            answersData[`Frage ${i}`] = val || "[Keine Antwort]";
+        }
+
+        let payload = {
+            studentName: currentStudentName,
+            duration: formatTime(secondsElapsed),
+            blurCount: stats.blur,
+            hiddenCount: stats.hidden,
+            totalViolations: stats.blur + stats.hidden,
+            answers: answersData,
+            logs: logs
+        };
+
+        fetch('send_mail.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                addLog('system', 'E-Mail erfolgreich versendet.');
+                alert('Prüfung erfolgreich beendet und Protokoll per E-Mail versendet!');
+            } else {
+                addLog('system', 'Fehler: ' + data.message);
+                alert('Fehler beim Versenden: ' + data.message);
+            }
+        })
+        .catch(error => {
+            addLog('system', 'Netzwerkfehler.');
+            alert('Netzwerkfehler beim Übertragen der Daten.');
+        });
+    }
 </script>
 
 </body>
