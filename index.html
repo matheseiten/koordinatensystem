@@ -152,7 +152,6 @@
             line-height: 1.6;
         }
 
-        /* Styling für die Gleichungs-Boxen oben in Frage 1 */
         .equations-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -344,13 +343,18 @@
                         Bestimme grafisch die Lösung des Linearen Gleichungssystems:<br><br>
                         $y = 0{,}5x + 1$<br>
                         $y = -2x + 6$<br><br>
-                        <em>Wähle den Modus und klicke in das Koordinatensystem (Rasterabstand 0,5):</em>
+                        <em>Wähle den Modus und klicke in das Koordinatensystem (nutze Zoom-Buttons zum Vergrößern/Verkleinern):</em>
                     </div>
                     
-                    <!-- Moduswahl-Buttons -->
+                    <!-- Moduswahl & Zoom-Steuerung -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <button type="button" id="modePointBtn" onclick="setMode('point')" style="flex: 1; min-width: 120px; padding: 10px; font-size: 0.9rem; background-color: var(--primary); color: white;">Punkt setzen</button>
+                        <button type="button" id="modeLineBtn" onclick="setMode('line')" style="flex: 1; min-width: 120px; padding: 10px; font-size: 0.9rem; background-color: var(--text-light); color: white;">Gerade zeichnen</button>
+                    </div>
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <button type="button" id="modePointBtn" onclick="setMode('point')" style="flex: 1; padding: 10px; font-size: 0.9rem; background-color: var(--primary); color: white;">Punkt setzen</button>
-                        <button type="button" id="modeLineBtn" onclick="setMode('line')" style="flex: 1; padding: 10px; font-size: 0.9rem; background-color: var(--text-light); color: white;">Gerade zeichnen</button>
+                        <button type="button" onclick="zoomIn()" style="flex: 1; padding: 8px; font-size: 0.85rem; background-color: #4b5563; color: white;">🔍+ Zoom In</button>
+                        <button type="button" onclick="zoomOut()" style="flex: 1; padding: 8px; font-size: 0.85rem; background-color: #4b5563; color: white;">🔍- Zoom Out</button>
+                        <button type="button" onclick="resetZoom()" style="flex: 1; padding: 8px; font-size: 0.85rem; background-color: #4b5563; color: white;">Standardansicht</button>
                     </div>
 
                     <div style="text-align: center; margin-bottom: 10px;">
@@ -399,14 +403,17 @@
     
     let stats = { blur: 0, hidden: 0 };
 
-    // Koordinatensystem Variablen für Frage 5
+    // Koordinatensystem Variablen
     let currentMode = 'point'; // 'point' oder 'line'
     let pointsQ5 = [];
     let linesQ5 = [];
     let selectedFirstPointForLine = null;
 
-    const xMin = -2, xMax = 8;
-    const yMin = -2, yMax = 8;
+    // Zoom- und Ausschnitt-Variablen
+    let xMin = -2, xMax = 8;
+    let yMin = -2, yMax = 8;
+    const defaultBounds = { xMin: -2, xMax: 8, yMin: -2, yMax: 8 };
+
     let canvas, ctx;
 
     function setMode(mode) {
@@ -416,6 +423,42 @@
         document.getElementById('modeLineBtn').style.backgroundColor = (mode === 'line') ? 'var(--primary)' : 'var(--text-light)';
         drawCoordSystem();
         updateCoordInfo();
+    }
+
+    function zoomIn() {
+        let xCenter = (xMin + xMax) / 2;
+        let yCenter = (yMin + yMax) / 2;
+        let xRange = (xMax - xMin) / 2;
+        let yRange = (yMax - yMin) / 2;
+
+        xMin = xCenter - xRange / 2;
+        xMax = xCenter + xRange / 2;
+        yMin = yCenter - yRange / 2;
+        yMax = yCenter + yRange / 2;
+
+        drawCoordSystem();
+    }
+
+    function zoomOut() {
+        let xCenter = (xMin + xMax) / 2;
+        let yCenter = (yMin + yMax) / 2;
+        let xRange = (xMax - xMin) * 2;
+        let yRange = (yMax - yMin) * 2;
+
+        xMin = xCenter - xRange / 2;
+        xMax = xCenter + xRange / 2;
+        yMin = yCenter - yRange / 2;
+        yMax = yCenter + yRange / 2;
+
+        drawCoordSystem();
+    }
+
+    function resetZoom() {
+        xMin = defaultBounds.xMin;
+        xMax = defaultBounds.xMax;
+        yMin = defaultBounds.yMin;
+        yMax = defaultBounds.yMax;
+        drawCoordSystem();
     }
 
     function initCanvas() {
@@ -439,13 +482,17 @@
             const mathX = xMin + (mouseX - padding) / plotWidth * (xMax - xMin);
             const mathY = yMax - (mouseY - padding) / plotHeight * (yMax - yMin);
 
-            // Snapping auf 0.5 Raster
-            const snapX = Math.round(mathX * 2) / 2;
-            const snapY = Math.round(mathY * 2) / 2;
+            // Dynamisches Snapping basierend auf aktuellem Zoom-Raster
+            let range = xMax - xMin;
+            let step = range > 10 ? 1 : 0.5;
+            if (range <= 2) step = 0.25;
+
+            const snapX = Math.round(mathX / step) * step;
+            const snapY = Math.round(mathY / step) * step;
 
             if (snapX >= xMin && snapX <= xMax && snapY >= yMin && snapY <= yMax) {
                 if (currentMode === 'point') {
-                    const existingIndex = pointsQ5.findIndex(p => p.x === snapX && p.y === snapY);
+                    const existingIndex = pointsQ5.findIndex(p => Math.abs(p.x - snapX) < 0.001 && Math.abs(p.y - snapY) < 0.001);
                     if (existingIndex > -1) {
                         pointsQ5.splice(existingIndex, 1);
                     } else {
@@ -455,11 +502,11 @@
                     if (!selectedFirstPointForLine) {
                         selectedFirstPointForLine = { x: snapX, y: snapY };
                     } else {
-                        if (selectedFirstPointForLine.x !== snapX || selectedFirstPointForLine.y !== snapY) {
+                        if (Math.abs(selectedFirstPointForLine.x - snapX) > 0.001 || Math.abs(selectedFirstPointForLine.y - snapY) > 0.001) {
                             linesQ5.push({ p1: selectedFirstPointForLine, p2: { x: snapX, y: snapY } });
                             selectedFirstPointForLine = null;
                         } else {
-                            selectedFirstPointForLine = null; // Abbrechen bei Klick auf selben Punkt
+                            selectedFirstPointForLine = null; 
                         }
                     }
                 }
@@ -489,31 +536,39 @@
             return height - padding - (y - yMin) / yRange * plotHeight;
         }
 
-        // Feinraster (Schritt 0.5)
+        // Raster-Schritte dynamisch anpassen
+        let mainStep = 1;
+        if (xRange > 15) mainStep = 5;
+        else if (xRange > 8) mainStep = 2;
+        else if (xRange <= 3) mainStep = 0.5;
+
+        let subStep = mainStep / 2;
+
+        // Feinraster
         ctx.strokeStyle = '#f1f5f9';
         ctx.lineWidth = 1;
-        for (let x = xMin; x <= xMax; x += 0.5) {
+        for (let x = Math.floor(xMin / subStep) * subStep; x <= xMax; x += subStep) {
             ctx.beginPath();
             ctx.moveTo(toPixelX(x), padding);
             ctx.lineTo(toPixelX(x), height - padding);
             ctx.stroke();
         }
-        for (let y = yMin; y <= yMax; y += 0.5) {
+        for (let y = Math.floor(yMin / subStep) * subStep; y <= yMax; y += subStep) {
             ctx.beginPath();
             ctx.moveTo(padding, toPixelY(y));
             ctx.lineTo(width - padding, toPixelY(y));
             ctx.stroke();
         }
 
-        // Haupt-Raster (Schritt 1.0)
+        // Haupt-Raster
         ctx.strokeStyle = '#e2e8f0';
-        for (let x = xMin; x <= xMax; x += 1) {
+        for (let x = Math.floor(xMin / mainStep) * mainStep; x <= xMax; x += mainStep) {
             ctx.beginPath();
             ctx.moveTo(toPixelX(x), padding);
             ctx.lineTo(toPixelX(x), height - padding);
             ctx.stroke();
         }
-        for (let y = yMin; y <= yMax; y += 1) {
+        for (let y = Math.floor(yMin / mainStep) * mainStep; y <= yMax; y += mainStep) {
             ctx.beginPath();
             ctx.moveTo(padding, toPixelY(y));
             ctx.lineTo(width - padding, toPixelY(y));
@@ -542,8 +597,8 @@
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
 
-        for (let x = Math.ceil(xMin); x <= xMax; x += 1) {
-            if (x !== 0) {
+        for (let x = Math.ceil(xMin / mainStep) * mainStep; x <= xMax; x += mainStep) {
+            if (Math.abs(x) > 0.001) {
                 const px = toPixelX(x);
                 const py = yMin <= 0 && yMax >= 0 ? toPixelY(0) + 4 : height - padding + 4;
                 ctx.fillText(x, px, py);
@@ -552,8 +607,8 @@
 
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        for (let y = Math.ceil(yMin); y <= yMax; y += 1) {
-            if (y !== 0) {
+        for (let y = Math.ceil(yMin / mainStep) * mainStep; y <= yMax; y += mainStep) {
+            if (Math.abs(y) > 0.001) {
                 const py = toPixelY(y);
                 const px = xMin <= 0 && xMax >= 0 ? toPixelX(0) - 6 : padding - 6;
                 ctx.fillText(y, px, py);
@@ -570,7 +625,7 @@
             let dy = line.p2.y - line.p1.y;
             let extP1, extP2;
 
-            if (dx === 0) {
+            if (Math.abs(dx) < 0.001) {
                 extP1 = { x: line.p1.x, y: yMin };
                 extP2 = { x: line.p1.x, y: yMax };
             } else {
@@ -584,7 +639,7 @@
             ctx.stroke();
         });
 
-        // Eingezeichnete Punkte zeichnen
+        // Punkte zeichnen
         pointsQ5.forEach(p => {
             const px = toPixelX(p.x);
             const py = toPixelY(p.y);
@@ -599,10 +654,12 @@
             ctx.fillStyle = '#1e293b';
             ctx.font = 'bold 10px sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(`(${p.x.toFixed(1).replace('.', ',')}|${p.y.toFixed(1).replace('.', ',')})`, px + 8, py - 4);
+            let formattedX = p.x.toString().replace('.', ',');
+            let formattedY = p.y.toString().replace('.', ',');
+            ctx.fillText(`(${formattedX}|${formattedY})`, px + 8, py - 4);
         });
 
-        // Ausgewählter erster Punkt für Linie (Vorschau)
+        // Vorschau erster Punkt für Linie
         if (selectedFirstPointForLine) {
             const px = toPixelX(selectedFirstPointForLine.x);
             const py = toPixelY(selectedFirstPointForLine.y);
@@ -628,13 +685,13 @@
         const infoSpan = document.getElementById('coordInfo');
         let parts = [];
         if (pointsQ5.length > 0) {
-            parts.push("Punkte: " + pointsQ5.map(p => `(${p.x.toFixed(1).replace('.', ',')}|${p.y.toFixed(1).replace('.', ',')})`).join(', '));
+            parts.push("Punkte: " + pointsQ5.map(p => `(${p.x.toString().replace('.', ',')}|${p.y.toString().replace('.', ',')})`).join(', '));
         }
         if (linesQ5.length > 0) {
-            parts.push("Geraden: " + linesQ5.map(l => `(${l.p1.x.toFixed(1).replace('.', ',')}|${l.p1.y.toFixed(1).replace('.', ',')})→(${l.p2.x.toFixed(1).replace('.', ',')}|${l.p2.y.toFixed(1).replace('.', ',')})`).join('; '));
+            parts.push("Geraden: " + linesQ5.map(l => `(${l.p1.x.toString().replace('.', ',')}|${l.p1.y.toString().replace('.', ',')})→(${l.p2.x.toString().replace('.', ',')}|${l.p2.y.toString().replace('.', ',')})`).join('; '));
         }
         if (currentMode === 'line' && selectedFirstPointForLine) {
-            parts.push(`[1. Punkt gewählt: (${selectedFirstPointForLine.x.toFixed(1).replace('.', ',')}|${selectedFirstPointForLine.y.toFixed(1).replace('.', ',')}), klicke 2. Punkt]`);
+            parts.push(`[1. Punkt gewählt: (${selectedFirstPointForLine.x.toString().replace('.', ',')}|${selectedFirstPointForLine.y.toString().replace('.', ',')}), klicke 2. Punkt]`);
         }
         infoSpan.textContent = parts.length > 0 ? parts.join(' | ') : "Eintragungen: Keine";
     }
