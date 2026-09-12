@@ -3,891 +3,868 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lernerfolgskontrolle Lineare Gleichungen (Version B)</title>
-    <!-- KaTeX CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <!-- KaTeX JS -->
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-
+    <title>Interaktives Koordinatensystem</title>
     <style>
-        :root {
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --danger: #dc2626;
-            --text: #1f2937;
-            --text-light: #6b7280;
-            --border: #e5e7eb;
-            --success: #16a34a;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            box-sizing: border-box;
+            background-color: #eef2f5;
+            padding: 20px;
         }
-
-        .container {
+        #app-container {
             width: 100%;
-            max-width: 1100px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            padding: 30px;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: var(--text);
+            max-width: 1050px;
+            height: 700px;
             display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: var(--text-light);
-        }
-        .status-badge.active { background-color: var(--success); }
-        .status-badge.warning { background-color: var(--danger); }
-
-        .main-layout {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 24px;
-            align-items: start;
-        }
-
-        @media (max-width: 850px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .left-column {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .right-column {
-            display: flex;
-            flex-direction: column;
+            flex-direction: row;
             gap: 20px;
         }
-
-        .timer-display {
-            font-size: 2.2rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 5px 0;
-            font-variant-numeric: tabular-nums;
-            color: var(--primary);
-        }
-
-        .controls {
+        #sidebar {
+            width: 220px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            padding: 15px;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            z-index: 10;
         }
-
-        button {
-            padding: 12px 20px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-            width: 100%;
-        }
-
-        #startBtn { background-color: var(--primary); color: white; }
-        #startBtn:hover { background-color: var(--primary-hover); }
-        #startBtn:disabled { background-color: var(--border); cursor: not-allowed; }
-
-        #stopBtn { background-color: var(--danger); color: white; }
-        #stopBtn:hover { background-color: #b91c1c; }
-        #stopBtn:disabled { background-color: var(--border); cursor: not-allowed; }
-
-        .exam-section {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            background: #fdfdfd;
-        }
-
-        .question-box {
-            display: none;
-        }
-
-        .question-box.active {
-            display: block;
-        }
-
-        .question-title {
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-            color: var(--primary);
-        }
-
-        .question-text {
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-
-        .equations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .equation-card {
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            font-size: 0.95rem;
-        }
-
-        .equation-card strong {
-            display: block;
-            color: var(--primary);
-            margin-bottom: 4px;
-            font-size: 0.85rem;
-        }
-
-        input[type="text"], textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            box-sizing: border-box;
-        }
-
-        textarea {
-            height: 150px;
-            resize: vertical;
-        }
-
-        input:disabled, textarea:disabled {
-            background-color: #f3f4f6;
-            cursor: not-allowed;
-        }
-
-        .nav-controls {
+        .control-group {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-group-row {
+            display: flex;
             align-items: center;
-            margin-top: 15px;
+            justify-content: space-between;
+            gap: 8px;
         }
-
-        .nav-controls button {
-            background-color: #4b5563;
-            color: white;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            width: auto;
+        label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #444;
+            text-transform: uppercase;
         }
-        .nav-controls button:hover:not(:disabled) { background-color: #374151; }
-        .nav-controls button:disabled { background-color: var(--border); cursor: not-allowed; }
-
-        .log-container {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            height: 240px;
-            overflow-y: auto;
-            background: #fafafa;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 0.75rem;
-        }
-
-        .log-entry {
-            padding: 4px 6px;
-            margin-bottom: 3px;
+        input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
             border-radius: 4px;
-            border-left: 3px solid var(--text-light);
+            font-size: 13px;
         }
 
-        .log-entry.blur, .log-entry.hidden { border-left-color: var(--danger); background: #fef2f2; }
-        .log-entry.focus, .log-entry.visible { border-left-color: var(--success); background: #f0fdf4; }
-        .log-entry.system { border-left-color: var(--primary); background: #eff6ff; }
+        /* Pfeil-Button Styling für das Eingabefeld */
+        .number-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .number-input-wrapper input {
+            width: 100%;
+            padding-right: 22px;
+            text-align: left;
+        }
+        .spin-buttons {
+            position: absolute;
+            right: 1px;
+            top: 1px;
+            bottom: 1px;
+            width: 20px;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #ccc;
+            background: #f8f9fa;
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+        }
+        .spin-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            cursor: pointer;
+            user-select: none;
+            color: #555;
+        }
+        .spin-btn:hover {
+            background: #e9ecef;
+        }
+        .spin-btn:first-child {
+            border-bottom: 1px solid #ccc;
+        }
+        
+        /* Farbpalette & Picker Styling */
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-top: 3px;
+            align-items: center;
+        }
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.1s ease, border-color 0.1s ease;
+            padding: 0;
+            background: none;
+        }
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+        .color-swatch.active {
+            outline: 2px solid #333;
+            outline-offset: 1px;
+            border-color: #000;
+        }
+        
+        /* Custom Color Input Button */
+        .custom-color-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+        }
+        input[type="color"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .custom-color-btn {
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.2);
+            background-color: #a0a0a0; /* Hellgrau als Initialfarbe */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 2px rgba(0,0,0,0.6);
+            pointer-events: none;
+        }
 
-        .warning-box {
-            background-color: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #991b1b;
-            padding: 12px;
+        .tool-btn, .action-btn {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            color: #333;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: left;
+            transition: border-width 0.1s ease, border-color 0.1s ease;
+        }
+        .tool-btn:hover, .action-btn:hover {
+            background: #f8f9fa;
+        }
+        
+        .tool-btn.active {
+            border: 3px solid #333333;
+            font-weight: bold;
+            padding: 6px 8px;
+        }
+
+        .zoom-btn {
+            flex: 1;
+            font-weight: bold;
+            padding: 6px;
+            text-align: center;
+        }
+        .btn-danger {
+            background: #fff;
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #212529;
+            border-color: #ccc;
+            text-align: center;
+        }
+        .btn-secondary:hover {
+            background: #e2e6ea;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            cursor: crosshair;
+            background-color: #ffffff;
             border-radius: 8px;
-            font-size: 0.85rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>
-        <span id="statusIndicator" class="status-badge"></span>
-        Lernerfolgskontrolle zu linearen Gleichungen (Version B)
-    </h1>
+<div id="app-container">
+    <div id="sidebar">
+        <!-- OBEN: Skala und Zoom -->
+        <div class="control-group">
+            <label for="gridSizeInput">Skala:</label>
+            <div class="number-input-wrapper">
+                <input type="text" id="gridSizeInput" value="1">
+                <div class="spin-buttons">
+                    <div class="spin-btn" id="spinUp">▲</div>
+                    <div class="spin-btn" id="spinDown">▼</div>
+                </div>
+            </div>
+        </div>
 
-    <div class="main-layout">
-        <!-- LINKE SPALTE: Timer, Infos & Protokoll -->
-        <div class="left-column">
-            <div class="exam-section" style="padding: 15px;">
-                <div class="timer-display" id="timerDisplay">00:00:00</div>
+        <div class="control-group">
+            <label>Zoom:</label>
+            <div class="control-group-row">
+                <button id="zoomInBtn" class="action-btn zoom-btn">+</button>
+                <button id="zoomOutBtn" class="action-btn zoom-btn">-</button>
+            </div>
+        </div>
+
+        <!-- Kamera verschieben -->
+        <div class="control-group" id="panGroup">
+            <button class="tool-btn active" data-mode="pan">Kamera verschieben</button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 2px 0;">
+
+        <!-- WERKZEUGE & FARBAUSWAHL -->
+        <div class="control-group" id="toolGroup">
+            <!-- Farbe auswählen -->
+            <label>Farbe:</label>
+            <div class="color-palette">
+                <!-- Schnellwahl-Buttons -->
+                <button class="color-swatch" style="background-color: #000000;" data-color="#000000" title="Schwarz"></button>
+                <button class="color-swatch" style="background-color: #ff0000;" data-color="#ff0000" title="Rot"></button>
+                <button class="color-swatch active" style="background-color: #007bff;" data-color="#007bff" title="Blau"></button>
+                <button class="color-swatch" style="background-color: #28a745;" data-color="#28a745" title="Grün"></button>
+                <button class="color-swatch" style="background-color: #fd7e14;" data-color="#fd7e14" title="Orange"></button>
+                <button class="color-swatch" style="background-color: #17a2b8;" data-color="#17a2b8" title="Türkis"></button>
+                <button class="color-swatch" style="background-color: #6f42c1;" data-color="#6f42c1" title="Lila"></button>
+                <button class="color-swatch" style="background-color: #e83e8c;" data-color="#e83e8c" title="Magenta"></button>
                 
-                <div class="controls" style="margin-top: 15px;">
-                    <button id="startBtn" onclick="startTimer()">Bearbeitung starten</button>
-                    <button id="stopBtn" onclick="stopTimer()" disabled>Bearbeitung beenden & abgeben</button>
+                <!-- Bisheriger Button: Hellgrau mit Farb-Picker -->
+                <div class="custom-color-wrapper" title="Eigene Farbe wählen">
+                    <div class="custom-color-btn" id="customColorPreview">+</div>
+                    <input type="color" id="customColorPicker" value="#a0a0a0">
                 </div>
             </div>
 
-            <div class="warning-box">
-                <strong>Hinweis:</strong> Tab- & Fensterwechsel werden protokolliert. Beim Abgeben erfolgt ein E-Mail-Versand an die Lehrkraft.
-            </div>
+            <div style="height: 5px;"></div>
 
-            <div>
-                <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; color: var(--text-light);">Protokoll:</div>
-                <div class="log-container" id="logContainer">
-                    <div class="log-entry system">Bereit. Namen eingeben und starten.</div>
-                </div>
-            </div>
+            <!-- Zeichnen-Werkzeuge -->
+            <button class="tool-btn" data-mode="point">Punkt setzen</button>
+            <button class="tool-btn" data-mode="segment">Strecke zeichnen</button>
+            <button class="tool-btn" data-mode="line">Gerade zeichnen</button>
+            <button class="tool-btn" data-mode="delete">Objekt löschen</button>
         </div>
 
-        <!-- RECHTE SPALTE: Name & Fragen -->
-        <div class="right-column">
-            <div class="exam-section" id="nameSection">
-                <div class="question-title">Identifikation</div>
-                <div class="question-text">Trage deinen vollständigen Namen ein. Nach dem Start der Prüfung wird das Feld gesperrt.</div>
-                <input type="text" id="studentNameInput" placeholder="Vor- und Nachname eingeben...">
-            </div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 2px 0;">
 
-            <div class="exam-section" id="questionsSection" style="display: none;">
-                <!-- Aufgabe 1 -->
-                <div class="question-box active" id="qBox1">
-                    <div class="question-title">Aufgabe 1</div>
-                    <div class="question-text">
-                        Ordne den folgenden Sachverhalten die passenden Gleichungen zu:
-                        
-                        <div class="equations-grid">
-                            <div class="equation-card">
-                                <strong>A</strong>
-                                $2x + y = 30$
-                            </div>
-                            <div class="equation-card">
-                                <strong>B</strong>
-                                $4x + 2y = 30$
-                            </div>
-                            <div class="equation-card">
-                                <strong>C</strong>
-                                $2x \cdot y = 30$
-                            </div>
-                        </div>
+        <!-- EXPORT & LÖSCHEN -->
+        <button id="copyBtn" class="action-btn btn-secondary">In Zwischenablage</button>
+        <button id="downloadBtn" class="action-btn btn-secondary">Als PNG herunterladen</button>
+        <button id="clearBtn" class="action-btn btn-danger">Alles löschen</button>
+    </div>
 
-                        <strong>Sachverhalte:</strong><br>
-                        a) Das Doppelte einer Zahl multipliziert mit einer anderen Zahl ergibt 30.<br>
-                        b) 30 Kinder werden in 4-Bett-Zimmer und 2-Bett-Zimmer aufgeteilt.<br>
-                        c) Der Umfang eines gleichschenkligen Dreiecks beträgt 30 cm.
-                    </div>
-                    <textarea id="answer1" placeholder="Antworten hier eingeben (z.B. a -> C, ...)..."></textarea>
-                </div>
-
-                <!-- Aufgabe 2 -->
-                <div class="question-box" id="qBox2">
-                    <div class="question-title">Aufgabe 2</div>
-                    <div class="question-text">
-                        Berechne $x$:<br><br>
-                        $$(x+4)(x-1) = (x+6)(x-2)$$
-                    </div>
-                    <textarea id="answer2" placeholder="Rechenweg und Ergebnis hier eingeben..."></textarea>
-                </div>
-
-                <!-- Aufgabe 3 -->
-                <div class="question-box" id="qBox3">
-                    <div class="question-title">Aufgabe 3</div>
-                    <div class="question-text">
-                        Bringe die beiden Gleichungen auf die Form $y = m \cdot x + n$.<br>
-                        Gib deinen Rechenweg mit jeweils 1–3 Äquivalenzumformungen an.<br><br>
-                        a) $2y - 6x + 8 = 0$<br>
-                        b) $3x = y - 6$
-                    </div>
-                    <textarea id="answer3" placeholder="Rechenwege und Lösungen hier eingeben..."></textarea>
-                </div>
-
-                <!-- Aufgabe 4 -->
-                <div class="question-box" id="qBox4">
-                    <div class="question-title">Aufgabe 4</div>
-                    <div class="question-text">
-                        Bestimme grafisch die Lösung des Linearen Gleichungssystems:<br><br>
-                        $y = 0{,}5x + 1$<br>
-                        $y = -2x + 6$<br><br>
-                        <em>Wähle den Modus und klicke in das Koordinatensystem (nutze Zoom-Buttons zum Vergrößern/Verkleinern):</em>
-                    </div>
-                    
-                    <!-- Moduswahl & Zoom-Steuerung -->
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                        <button type="button" id="modePointBtn" onclick="setMode('point')" style="flex: 1; min-width: 120px; padding: 10px; font-size: 0.9rem; background-color: var(--primary); color: white;">Punkt setzen</button>
-                        <button type="button" id="modeLineBtn" onclick="setMode('line')" style="flex: 1; min-width: 120px; padding: 10px; font-size: 0.9rem; background-color: var(--text-light); color: white;">Gerade zeichnen</button>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <button type="button" onclick="zoomIn()" style="flex: 1; padding: 8px; font-size: 0.85rem; background-color: #4b5563; color: white;">🔍+ Zoom In</button>
-                        <button type="button" onclick="zoomOut()" style="flex: 1; padding: 8px; font-size: 0.85rem; background-color: #4b5563; color: white;">🔍- Zoom Out</button>
-                        <button type="button" onclick="resetZoom()" style="flex: 1; padding: 8px; font-size: 0.85rem; background-color: #4b5563; color: white;">Standardansicht</button>
-                    </div>
-
-                    <div style="text-align: center; margin-bottom: 10px;">
-                        <canvas id="coordCanvas" width="420" height="420" style="border: 1px solid var(--border); background: #ffffff; cursor: crosshair; border-radius: 6px;"></canvas>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <span id="coordInfo" style="font-size: 0.85rem; color: var(--text-light); font-weight: 500;">Eintragungen: Keine</span>
-                        <button type="button" onclick="clearPoints()" style="width: auto; padding: 6px 12px; font-size: 0.85rem; background-color: var(--danger);">Alles löschen</button>
-                    </div>
-
-                    <textarea id="answer4" placeholder="Lösung hier eingeben..." style="height: 80px;"></textarea>
-                </div>
-
-                <div class="nav-controls">
-                    <button id="prevBtn" onclick="changeQuestion(-1)" disabled>&larr; Vorherige</button>
-                    <span id="questionIndicator" style="font-weight: 600; font-size: 0.9rem; color: var(--text-light);">Frage 1 / 4</span>
-                    <button id="nextBtn" onclick="changeQuestion(1)">Nächste &rarr;</button>
-                </div>
-            </div>
-        </div>
+    <div id="canvas-container">
+        <canvas id="gridCanvas"></canvas>
+        <div id="info">X: 0 | Y: 0</div>
     </div>
 </div>
 
 <script>
-    // KaTeX Auto-Render Initialisierung
-    document.addEventListener("DOMContentLoaded", function() {
-        renderMathInElement(document.body, {
-            delimiters: [
-                {left: "$$", right: "$$", display: true},
-                {left: "$", right: "$", display: false},
-                {left: "\\(", right: "\\)", display: false},
-                {left: "\\[", right: "\\]", display: true}
-            ]
+    const canvas = document.getElementById('gridCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvas-container');
+    const info = document.getElementById('info');
+
+    // Bedienelemente
+    const gridSizeInput = document.getElementById('gridSizeInput');
+    const spinUp = document.getElementById('spinUp');
+    const spinDown = document.getElementById('spinDown');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toolButtons = document.querySelectorAll('.tool-btn');
+
+    // Farbauswahl Elemente
+    const colorSwatches = document.querySelectorAll('.color-swatch');
+    const customColorPicker = document.getElementById('customColorPicker');
+    const customColorPreview = document.getElementById('customColorPreview');
+    let currentColor = '#007bff'; // Standardfarbe Blau
+
+    // Farbauswahl-Logik
+    colorSwatches.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            colorSwatches.forEach(s => s.classList.remove('active'));
+            customColorPreview.parentElement.classList.remove('active');
+            
+            swatch.classList.add('active');
+            currentColor = swatch.getAttribute('data-color');
         });
-        initCanvas();
     });
 
-    let timerInterval = null;
-    let secondsElapsed = 0;
-    let isRunning = false;
-    let currentQuestion = 1;
-    let totalQuestions = 4;
-    let logs = [];
-    let currentStudentName = "";
-    
-    let stats = { blur: 0, hidden: 0 };
+    customColorPicker.addEventListener('input', (e) => {
+        colorSwatches.forEach(s => s.classList.remove('active'));
+        
+        currentColor = e.target.value;
+        customColorPreview.style.backgroundColor = currentColor;
+        customColorPreview.innerText = ''; // Plus-Zeichen ausblenden, wenn Farbe gewählt wurde
+        customColorPreview.classList.add('active');
+    });
 
-    // Koordinatensystem Variablen
-    let currentMode = 'point'; // 'point' oder 'line'
-    let pointsQ5 = [];
-    let linesQ5 = [];
-    let selectedFirstPointForLine = null;
+    // Festgelegte Stufen für Pfeilsteuerung: 0.1, 0.5, 1, 5, 10
+    const presetSteps = [0.1, 0.5, 1, 5, 10];
 
-    // Zoom- und Ausschnitt-Variablen
-    let xMin = -2, xMax = 8;
-    let yMin = -2, yMax = 8;
-    const defaultBounds = { xMin: -2, xMax: 8, yMin: -2, yMax: 8 };
+    // Aktiver Modus
+    let currentMode = 'pan';
 
-    let canvas, ctx;
+    // Kamera / Ansicht Parameter
+    let scale = 40; // Pixel pro mathematische Einheit
+    let offsetX = 0; // Verschiebung in X (in Pixeln)
+    let offsetY = 0; // Verschiebung in Y (in Pixeln)
 
-    function setMode(mode) {
-        currentMode = mode;
-        selectedFirstPointForLine = null;
-        document.getElementById('modePointBtn').style.backgroundColor = (mode === 'point') ? 'var(--primary)' : 'var(--text-light)';
-        document.getElementById('modeLineBtn').style.backgroundColor = (mode === 'line') ? 'var(--primary)' : 'var(--text-light)';
-        drawCoordSystem();
-        updateCoordInfo();
+    // Interaktions-Status
+    let isDragging = false;
+    let startPanX = 0;
+    let startPanY = 0;
+    let startPoint = null;
+
+    // Gezeichnete Objekte
+    let points = [];
+    let segments = [];
+    let lines = [];
+
+    // Formatiert Zahlen mit Komma als Dezimaltrenner
+    function formatNumber(num, decimals = 2) {
+        if (Number.isInteger(num)) return num.toString();
+        const str = num.toFixed(decimals).replace(/\.?0+$/, '');
+        return str.replace('.', ',');
     }
 
-    function zoomIn() {
-        let xCenter = (xMin + xMax) / 2;
-        let yCenter = (yMin + yMax) / 2;
-        let xRange = (xMax - xMin) / 2;
-        let yRange = (yMax - yMin) / 2;
-
-        xMin = xCenter - xRange / 2;
-        xMax = xCenter + xRange / 2;
-        yMin = yCenter - yRange / 2;
-        yMax = yCenter + yRange / 2;
-
-        drawCoordSystem();
+    // Liest den aktuellen Skala-Wert (akzeptiert Komma und Punkt)
+    function getGridSize() {
+        let valStr = gridSizeInput.value.replace(',', '.');
+        let val = parseFloat(valStr);
+        return (isNaN(val) || val <= 0) ? 1 : val;
     }
 
-    function zoomOut() {
-        let xCenter = (xMin + xMax) / 2;
-        let yCenter = (yMin + yMax) / 2;
-        let xRange = (xMax - xMin) * 2;
-        let yRange = (yMax - yMin) * 2;
-
-        xMin = xCenter - xRange / 2;
-        xMax = xCenter + xRange / 2;
-        yMin = yCenter - yRange / 2;
-        yMax = yCenter + yRange / 2;
-
-        drawCoordSystem();
+    // Pfeil-Schritt-Navigation durch [0.1, 0.5, 1, 5, 10]
+    function stepGridSize(direction) {
+        const current = getGridSize();
+        if (direction > 0) {
+            const next = presetSteps.find(s => s > current + 1e-9);
+            if (next !== undefined) gridSizeInput.value = formatNumber(next);
+        } else {
+            const prev = [...presetSteps].reverse().find(s => s < current - 1e-9);
+            if (prev !== undefined) gridSizeInput.value = formatNumber(prev);
+        }
+        draw();
     }
 
-    function resetZoom() {
-        xMin = defaultBounds.xMin;
-        xMax = defaultBounds.xMax;
-        yMin = defaultBounds.yMin;
-        yMax = defaultBounds.yMax;
-        drawCoordSystem();
-    }
-
-    function initCanvas() {
-        canvas = document.getElementById('coordCanvas');
-        if (!canvas) return;
-        ctx = canvas.getContext('2d');
-        drawCoordSystem();
-
-        canvas.addEventListener('click', function(event) {
-            if (!isRunning) return;
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
-
-            const width = canvas.width;
-            const height = canvas.height;
-            const padding = 40;
-            const plotWidth = width - 2 * padding;
-            const plotHeight = height - 2 * padding;
-
-            const mathX = xMin + (mouseX - padding) / plotWidth * (xMax - xMin);
-            const mathY = yMax - (mouseY - padding) / plotHeight * (yMax - yMin);
-
-            // Dynamisches Snapping basierend auf aktuellem Zoom-Raster
-            let range = xMax - xMin;
-            let step = range > 10 ? 1 : 0.5;
-            if (range <= 2) step = 0.25;
-
-            const snapX = Math.round(mathX / step) * step;
-            const snapY = Math.round(mathY / step) * step;
-
-            if (snapX >= xMin && snapX <= xMax && snapY >= yMin && snapY <= yMax) {
-                if (currentMode === 'point') {
-                    const existingIndex = pointsQ5.findIndex(p => Math.abs(p.x - snapX) < 0.001 && Math.abs(p.y - snapY) < 0.001);
-                    if (existingIndex > -1) {
-                        pointsQ5.splice(existingIndex, 1);
-                    } else {
-                        pointsQ5.push({ x: snapX, y: snapY });
-                    }
-                } else if (currentMode === 'line') {
-                    if (!selectedFirstPointForLine) {
-                        selectedFirstPointForLine = { x: snapX, y: snapY };
-                    } else {
-                        if (Math.abs(selectedFirstPointForLine.x - snapX) > 0.001 || Math.abs(selectedFirstPointForLine.y - snapY) > 0.001) {
-                            linesQ5.push({ p1: selectedFirstPointForLine, p2: { x: snapX, y: snapY } });
-                            selectedFirstPointForLine = null;
-                        } else {
-                            selectedFirstPointForLine = null; 
-                        }
-                    }
-                }
-                drawCoordSystem();
-                updateCoordInfo();
-            }
+    // Werkzeugwechsel per Buttons
+    toolButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            toolButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = btn.getAttribute('data-mode');
+            startPoint = null;
+            draw();
         });
+    });
+
+    // Canvas-Größe anpassen
+    function resizeCanvas() {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        if (offsetX === 0 && offsetY === 0) {
+            offsetX = canvas.width / 2;
+            offsetY = canvas.height / 2;
+        }
+        draw();
     }
 
-    function drawCoordSystem() {
-        if (!ctx) return;
-        const width = canvas.width;
-        const height = canvas.height;
-        const padding = 40;
-        const plotWidth = width - 2 * padding;
-        const plotHeight = height - 2 * padding;
+    window.addEventListener('resize', resizeCanvas);
 
-        ctx.clearRect(0, 0, width, height);
+    // Hilfsfunktionen für Koordinatentransformation (Snappen immer aktiv)
+    function screenToWorld(screenX, screenY, applySnap = true) {
+        let worldX = (screenX - offsetX) / scale;
+        let worldY = -(screenY - offsetY) / scale;
 
-        const xRange = xMax - xMin;
-        const yRange = yMax - yMin;
-
-        function toPixelX(x) {
-            return padding + (x - xMin) / xRange * plotWidth;
-        }
-        function toPixelY(y) {
-            return height - padding - (y - yMin) / yRange * plotHeight;
+        if (applySnap) {
+            const step = getGridSize();
+            worldX = Math.round(worldX / step) * step;
+            worldY = Math.round(worldY / step) * step;
         }
 
-        // Raster-Schritte dynamisch anpassen
-        let mainStep = 1;
-        if (xRange > 15) mainStep = 5;
-        else if (xRange > 8) mainStep = 2;
-        else if (xRange <= 3) mainStep = 0.5;
-
-        let subStep = mainStep / 2;
-
-        // Feinraster
-        ctx.strokeStyle = '#f1f5f9';
-        ctx.lineWidth = 1;
-        for (let x = Math.floor(xMin / subStep) * subStep; x <= xMax; x += subStep) {
-            ctx.beginPath();
-            ctx.moveTo(toPixelX(x), padding);
-            ctx.lineTo(toPixelX(x), height - padding);
-            ctx.stroke();
-        }
-        for (let y = Math.floor(yMin / subStep) * subStep; y <= yMax; y += subStep) {
-            ctx.beginPath();
-            ctx.moveTo(padding, toPixelY(y));
-            ctx.lineTo(width - padding, toPixelY(y));
-            ctx.stroke();
-        }
-
-        // Haupt-Raster
-        ctx.strokeStyle = '#e2e8f0';
-        for (let x = Math.floor(xMin / mainStep) * mainStep; x <= xMax; x += mainStep) {
-            ctx.beginPath();
-            ctx.moveTo(toPixelX(x), padding);
-            ctx.lineTo(toPixelX(x), height - padding);
-            ctx.stroke();
-        }
-        for (let y = Math.floor(yMin / mainStep) * mainStep; y <= yMax; y += mainStep) {
-            ctx.beginPath();
-            ctx.moveTo(padding, toPixelY(y));
-            ctx.lineTo(width - padding, toPixelY(y));
-            ctx.stroke();
-        }
-
-        // Achsen
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1.5;
-        if (yMin <= 0 && yMax >= 0) {
-            ctx.beginPath();
-            ctx.moveTo(padding, toPixelY(0));
-            ctx.lineTo(width - padding, toPixelY(0));
-            ctx.stroke();
-        }
-        if (xMin <= 0 && xMax >= 0) {
-            ctx.beginPath();
-            ctx.moveTo(toPixelX(0), padding);
-            ctx.lineTo(toPixelX(0), height - padding);
-            ctx.stroke();
-        }
-
-        // Beschriftungen
-        ctx.fillStyle = '#475569';
-        ctx.font = '11px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-
-        for (let x = Math.ceil(xMin / mainStep) * mainStep; x <= xMax; x += mainStep) {
-            if (Math.abs(x) > 0.001) {
-                const px = toPixelX(x);
-                const py = yMin <= 0 && yMax >= 0 ? toPixelY(0) + 4 : height - padding + 4;
-                ctx.fillText(x, px, py);
-            }
-        }
-
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        for (let y = Math.ceil(yMin / mainStep) * mainStep; y <= yMax; y += mainStep) {
-            if (Math.abs(y) > 0.001) {
-                const py = toPixelY(y);
-                const px = xMin <= 0 && xMax >= 0 ? toPixelX(0) - 6 : padding - 6;
-                ctx.fillText(y, px, py);
-            }
-        }
-
-        // Geraden zeichnen
-        linesQ5.forEach(line => {
-            ctx.strokeStyle = '#dc2626';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-
-            let dx = line.p2.x - line.p1.x;
-            let dy = line.p2.y - line.p1.y;
-            let extP1, extP2;
-
-            if (Math.abs(dx) < 0.001) {
-                extP1 = { x: line.p1.x, y: yMin };
-                extP2 = { x: line.p1.x, y: yMax };
-            } else {
-                let m = dy / dx;
-                let n = line.p1.y - m * line.p1.x;
-                extP1 = { x: xMin, y: m * xMin + n };
-                extP2 = { x: xMax, y: m * xMax + n };
-            }
-            ctx.moveTo(toPixelX(extP1.x), toPixelY(extP1.y));
-            ctx.lineTo(toPixelX(extP2.x), toPixelY(extP2.y));
-            ctx.stroke();
-        });
-
-        // Punkte zeichnen
-        pointsQ5.forEach(p => {
-            const px = toPixelX(p.x);
-            const py = toPixelY(p.y);
-            ctx.fillStyle = '#2563eb';
-            ctx.beginPath();
-            ctx.arc(px, py, 5, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            ctx.fillStyle = '#1e293b';
-            ctx.font = 'bold 10px sans-serif';
-            ctx.textAlign = 'left';
-            let formattedX = p.x.toString().replace('.', ',');
-            let formattedY = p.y.toString().replace('.', ',');
-            ctx.fillText(`(${formattedX}|${formattedY})`, px + 8, py - 4);
-        });
-
-        // Vorschau erster Punkt für Linie
-        if (selectedFirstPointForLine) {
-            const px = toPixelX(selectedFirstPointForLine.x);
-            const py = toPixelY(selectedFirstPointForLine.y);
-            ctx.fillStyle = '#dc2626';
-            ctx.beginPath();
-            ctx.arc(px, py, 6, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.strokeStyle = '#fef2f2';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
+        return { x: worldX, y: worldY };
     }
 
-    function clearPoints() {
-        pointsQ5 = [];
-        linesQ5 = [];
-        selectedFirstPointForLine = null;
-        drawCoordSystem();
-        updateCoordInfo();
-    }
-
-    function updateCoordInfo() {
-        const infoSpan = document.getElementById('coordInfo');
-        let parts = [];
-        if (pointsQ5.length > 0) {
-            parts.push("Punkte: " + pointsQ5.map(p => `(${p.x.toString().replace('.', ',')}|${p.y.toString().replace('.', ',')})`).join(', '));
-        }
-        if (linesQ5.length > 0) {
-            parts.push("Geraden: " + linesQ5.map(l => `(${l.p1.x.toString().replace('.', ',')}|${l.p1.y.toString().replace('.', ',')})→(${l.p2.x.toString().replace('.', ',')}|${l.p2.y.toString().replace('.', ',')})`).join('; '));
-        }
-        if (currentMode === 'line' && selectedFirstPointForLine) {
-            parts.push(`[1. Punkt gewählt: (${selectedFirstPointForLine.x.toString().replace('.', ',')}|${selectedFirstPointForLine.y.toString().replace('.', ',')}), klicke 2. Punkt]`);
-        }
-        infoSpan.textContent = parts.length > 0 ? parts.join(' | ') : "Eintragungen: Keine";
-    }
-
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const timerDisplay = document.getElementById('timerDisplay');
-    const logContainer = document.getElementById('logContainer');
-    const statusIndicator = document.getElementById('statusIndicator');
-    const questionIndicator = document.getElementById('questionIndicator');
-    const nameInput = document.getElementById('studentNameInput');
-    const questionsSection = document.getElementById('questionsSection');
-
-    function formatTime(totalSeconds) {
-        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-        const secs = String(totalSeconds % 60).padStart(2, '0');
-        return `${hrs}:${mins}:${secs}`;
-    }
-
-    function addLog(type, message) {
-        const timestamp = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
-        const logEntry = {
-            time: timestamp,
-            timerValue: formatTime(secondsElapsed),
-            type: type,
-            message: message
+    function worldToScreen(worldX, worldY) {
+        return {
+            x: offsetX + worldX * scale,
+            y: offsetY - worldY * scale
         };
-        logs.push(logEntry);
-
-        const div = document.createElement('div');
-        div.className = `log-entry ${type}`;
-        div.textContent = `[${timestamp}] (${logEntry.timerValue}) ${message}`;
-        logContainer.appendChild(div);
-        logContainer.scrollTop = logContainer.scrollHeight;
     }
 
-    function startTimer() {
-        const enteredName = nameInput.value.trim();
+    // Zeichnet ein X an den Bildschirmkoordinaten
+    function drawX(x, y, color, size = 6) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - size, y - size);
+        ctx.lineTo(x + size, y + size);
+        ctx.moveTo(x + size, y - size);
+        ctx.lineTo(x - size, y + size);
+        ctx.stroke();
+    }
 
-        if (!enteredName) {
-            alert('Bitte gib erst deinen Namen ein!');
-            nameInput.focus();
+    // Berechnet Endpunkte einer unendlichen Gerade über den Canvas-Rand
+    function getExtendedLineEndpoints(p1, p2) {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+
+        if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) {
+            return { p1: worldToScreen(p1.x, p1.y), p2: worldToScreen(p2.x, p2.y) };
+        }
+
+        const minX = -offsetX / scale;
+        const maxX = (canvas.width - offsetX) / scale;
+        const minY = (offsetY - canvas.height) / scale;
+        const maxY = offsetY / scale;
+
+        const R = Math.max(maxX - minX, maxY - minY) * 3;
+        const len = Math.hypot(dx, dy);
+
+        const ux = dx / len;
+        const uy = dy / len;
+
+        const ext1 = { x: p1.x - ux * R, y: p1.y - uy * R };
+        const ext2 = { x: p1.x + ux * R, y: p1.y + uy * R };
+
+        return {
+            p1: worldToScreen(ext1.x, ext1.y),
+            p2: worldToScreen(ext2.x, ext2.y)
+        };
+    }
+
+    // Zoom-Funktionalität
+    function zoom(factor) {
+        const mouseWorldBefore = screenToWorld(canvas.width / 2, canvas.height / 2, false);
+        scale *= factor;
+        scale = Math.max(5, Math.min(scale, 500));
+
+        offsetX = canvas.width / 2 - mouseWorldBefore.x * scale;
+        offsetY = canvas.height / 2 + mouseWorldBefore.y * scale;
+        draw();
+    }
+
+    // --- LÖSCH-MATHEMATIK ---
+    function distToSegment(p, p1, p2) {
+        const l2 = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        if (l2 === 0) return Math.hypot(p.x - p1.x, p.y - p1.y);
+        let t = ((p.x - p1.x) * (p2.x - p1.x) + (p.y - p1.y) * (p2.y - p1.y)) / (l2 * l2);
+        t = Math.max(0, Math.min(1, t));
+        const projX = p1.x + t * (p2.x - p1.x);
+        const projY = p1.y + t * (p2.y - p1.y);
+        return Math.hypot(p.x - projX, p.y - projY);
+    }
+
+    function distToLine(p, p1, p2) {
+        const num = Math.abs((p2.y - p1.y) * p.x - (p2.x - p1.x) * p.y + p2.x * p1.y - p2.y * p1.x);
+        const den = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        return den === 0 ? Math.hypot(p.x - p1.x, p.y - p1.y) : num / den;
+    }
+
+    function deleteObjectAt(screenX, screenY) {
+        const clickWorld = screenToWorld(screenX, screenY, false);
+        const thresholdPixel = 8;
+        const thresholdWorld = thresholdPixel / scale;
+
+        for (let i = points.length - 1; i >= 0; i--) {
+            if (Math.hypot(points[i].x - clickWorld.x, points[i].y - clickWorld.y) <= thresholdWorld) {
+                points.splice(i, 1);
+                return true;
+            }
+        }
+
+        for (let i = segments.length - 1; i >= 0; i--) {
+            if (distToSegment(clickWorld, segments[i].p1, segments[i].p2) <= thresholdWorld) {
+                segments.splice(i, 1);
+                return true;
+            }
+        }
+
+        for (let i = lines.length - 1; i >= 0; i--) {
+            if (distToLine(clickWorld, lines[i].p1, lines[i].p2) <= thresholdWorld) {
+                lines.splice(i, 1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Hauptzeichnungsfunktion
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const unitGridSize = getGridSize();
+        const gridPixelSize = unitGridSize * scale;
+
+        // 1. Raster
+        ctx.strokeStyle = '#e8e8e8';
+        ctx.lineWidth = 1;
+
+        const startX = (offsetX % gridPixelSize) - gridPixelSize;
+        for (let x = startX; x < canvas.width; x += gridPixelSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        const startY = (offsetY % gridPixelSize) - gridPixelSize;
+        for (let y = startY; y < canvas.height; y += gridPixelSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+
+        // 2. Achsen
+        ctx.strokeStyle = '#333333';
+        ctx.fillStyle = '#333333';
+        ctx.lineWidth = 2;
+
+        // X-Achse
+        ctx.beginPath();
+        ctx.moveTo(0, offsetY);
+        ctx.lineTo(canvas.width, offsetY);
+        ctx.stroke();
+
+        // Pfeilspitze X-Achse
+        const arrowSize = 8;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width, offsetY);
+        ctx.lineTo(canvas.width - arrowSize, offsetY - arrowSize / 2);
+        ctx.lineTo(canvas.width - arrowSize, offsetY + arrowSize / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Y-Achse
+        ctx.beginPath();
+        ctx.moveTo(offsetX, 0);
+        ctx.lineTo(offsetX, canvas.height);
+        ctx.stroke();
+
+        // Pfeilspitze Y-Achse
+        ctx.beginPath();
+        ctx.moveTo(offsetX, 0);
+        ctx.lineTo(offsetX - arrowSize / 2, arrowSize);
+        ctx.lineTo(offsetX + arrowSize / 2, arrowSize);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ticks & Beschriftung
+        ctx.fillStyle = '#333';
+        ctx.font = '11px Arial';
+        const tickLength = 5;
+
+        // X-Achse Ticks
+        const minWorldX = Math.ceil((-offsetX) / gridPixelSize);
+        const maxWorldX = Math.floor((canvas.width - offsetX) / gridPixelSize);
+
+        for (let i = minWorldX; i <= maxWorldX; i++) {
+            if (i === 0) continue;
+            const wX = i * unitGridSize;
+            const s = worldToScreen(wX, 0);
+
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(s.x, offsetY - tickLength);
+            ctx.lineTo(s.x, offsetY + tickLength);
+            ctx.stroke();
+
+            if (Math.abs(i) % 2 === 0) {
+                ctx.fillText(formatNumber(wX), s.x - 6, offsetY + 18);
+            }
+        }
+
+        // Y-Achse Ticks
+        const minWorldY = Math.ceil((offsetY - canvas.height) / gridPixelSize);
+        const maxWorldY = Math.floor(offsetY / gridPixelSize);
+
+        for (let i = minWorldY; i <= maxWorldY; i++) {
+            if (i === 0) continue;
+            const wY = i * unitGridSize;
+            const s = worldToScreen(0, wY);
+
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(offsetX - tickLength, s.y);
+            ctx.lineTo(offsetX + tickLength, s.y);
+            ctx.stroke();
+
+            if (Math.abs(i) % 2 === 0) {
+                ctx.fillText(formatNumber(wY), offsetX + 10, s.y + 4);
+            }
+        }
+
+        // 3. Strecken zeichnen
+        ctx.lineWidth = 2;
+        segments.forEach(seg => {
+            const p1 = worldToScreen(seg.p1.x, seg.p1.y);
+            const p2 = worldToScreen(seg.p2.x, seg.p2.y);
+            ctx.strokeStyle = seg.color;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        });
+
+        // 4. Unendliche Geraden zeichnen
+        lines.forEach(line => {
+            const ext = getExtendedLineEndpoints(line.p1, line.p2);
+            ctx.strokeStyle = line.color;
+            ctx.beginPath();
+            ctx.moveTo(ext.p1.x, ext.p1.y);
+            ctx.lineTo(ext.p2.x, ext.p2.y);
+            ctx.stroke();
+        });
+
+        // Vorschau-Linie beim Zeichnen
+        if (startPoint && (currentMode === 'line' || currentMode === 'segment')) {
+            const mouseWorld = screenToWorld(currentMousePos.x, currentMousePos.y);
+
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+
+            if (currentMode === 'segment') {
+                const p1 = worldToScreen(startPoint.x, startPoint.y);
+                const p2 = worldToScreen(mouseWorld.x, mouseWorld.y);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            } else {
+                const ext = getExtendedLineEndpoints(startPoint, mouseWorld);
+                ctx.beginPath();
+                ctx.moveTo(ext.p1.x, ext.p1.y);
+                ctx.lineTo(ext.p2.x, ext.p2.y);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+        }
+
+        // 5. Einzelne Punkte zeichnen (als X)
+        points.forEach(p => {
+            const s = worldToScreen(p.x, p.y);
+            drawX(s.x, s.y, p.color);
+        });
+    }
+
+    let currentMousePos = { x: 0, y: 0 };
+
+    // Events
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        currentMousePos = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+
+        if (isDragging) {
+            offsetX += currentMousePos.x - startPanX;
+            offsetY += currentMousePos.y - startPanY;
+            startPanX = currentMousePos.x;
+            startPanY = currentMousePos.y;
+        }
+
+        const worldPos = screenToWorld(currentMousePos.x, currentMousePos.y);
+        info.innerText = `X: ${formatNumber(worldPos.x)} | Y: ${formatNumber(worldPos.y)}`;
+
+        draw();
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        if (e.button === 1 || currentMode === 'pan') {
+            isDragging = true;
+            startPanX = clickX;
+            startPanY = clickY;
             return;
         }
 
-        if (isRunning) return;
-        
-        currentStudentName = enteredName;
-        isRunning = true;
-        secondsElapsed = 0;
-        logs = [];
-        stats.blur = 0;
-        stats.hidden = 0;
-        
-        nameInput.disabled = true;
-        questionsSection.style.display = 'block';
-
-        logContainer.innerHTML = '';
-        addLog('system', `Prüfung gestartet für: ${currentStudentName}`);
-
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        statusIndicator.classList.add('active');
-
-        updateNavButtons();
-        drawCoordSystem();
-
-        timerInterval = setInterval(() => {
-            secondsElapsed++;
-            timerDisplay.textContent = formatTime(secondsElapsed);
-        }, 1000);
-
-        window.addEventListener('blur', handleBlur);
-        window.addEventListener('focus', handleFocus);
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-    }
-
-    function stopTimer() {
-        if (!isRunning) return;
-        isRunning = false;
-        clearInterval(timerInterval);
-
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-        statusIndicator.classList.remove('active');
-        statusIndicator.classList.remove('warning');
-
-        for (let i = 1; i <= totalQuestions; i++) {
-            const el = document.getElementById(`answer${i}`);
-            if (el) el.disabled = true;
-        }
-
-        window.removeEventListener('blur', handleBlur);
-        window.removeEventListener('focus', handleFocus);
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-
-        addLog('system', 'Prüfung beendet. Sende Daten...');
-        sendDataToServer();
-    }
-
-    function changeQuestion(direction) {
-        if (!isRunning) return;
-        const newQuestion = currentQuestion + direction;
-        if (newQuestion < 1 || newQuestion > totalQuestions) return;
-
-        document.getElementById(`qBox${currentQuestion}`).classList.remove('active');
-        currentQuestion = newQuestion;
-        document.getElementById(`qBox${currentQuestion}`).classList.add('active');
-        
-        questionIndicator.textContent = `Frage ${currentQuestion} / ${totalQuestions}`;
-        updateNavButtons();
-        if (currentQuestion === 4) {
-            drawCoordSystem();
-        }
-    }
-
-    function updateNavButtons() {
-        prevBtn.disabled = currentQuestion === 1;
-        nextBtn.disabled = currentQuestion === totalQuestions;
-    }
-
-    function handleBlur() {
-        if (!isRunning) return;
-        stats.blur++;
-        statusIndicator.classList.add('warning');
-        addLog('blur', 'WARNUNG: Fokus verloren (Blur).');
-    }
-
-    function handleFocus() {
-        if (!isRunning) return;
-        statusIndicator.classList.remove('warning');
-        addLog('focus', 'INFO: Fokus wieder da (Focus).');
-    }
-
-    function handleVisibilityChange() {
-        if (!isRunning) return;
-        if (document.hidden) {
-            stats.hidden++;
-            statusIndicator.classList.add('warning');
-            addLog('hidden', 'WARNUNG: Tab unsichtbar (Hidden).');
-        } else {
-            statusIndicator.classList.remove('warning');
-            addLog('visible', 'INFO: Tab wieder sichtbar (Visible).');
-        }
-    }
-
-    function sendDataToServer() {
-        let answersData = {};
-        for (let i = 1; i <= totalQuestions; i++) {
-            const el = document.getElementById(`answer${i}`);
-            let val = el ? el.value.trim() : "";
-            if (i === 4) {
-                let ptsStr = pointsQ5.map(p => `(${p.x}|${p.y})`).join(', ');
-                let linesStr = linesQ5.map(l => `(${l.p1.x}|${l.p1.y}) zu (${l.p2.x}|${l.p2.y})`).join(', ');
-                val = `Punkte: [${ptsStr}] | Geraden: [${linesStr}] | Notiz: ${val}`;
-            }
-            answersData[`Frage ${i}`] = val || "[Keine Antwort]";
-        }
-
-        let payload = {
-            studentName: currentStudentName,
-            duration: formatTime(secondsElapsed),
-            blurCount: stats.blur,
-            hiddenCount: stats.hidden,
-            totalViolations: stats.blur + stats.hidden,
-            answers: answersData,
-            logs: logs
-        };
-
-        fetch('send_mail.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                addLog('system', 'E-Mail erfolgreich versendet.');
-                alert('Prüfung erfolgreich beendet und Protokoll per E-Mail versendet!');
+        if (e.button === 0) {
+            if (currentMode === 'delete') {
+                deleteObjectAt(clickX, clickY);
             } else {
-                addLog('system', 'Fehler: ' + data.message);
-                alert('Fehler beim Versenden: ' + data.message);
+                const worldPos = screenToWorld(clickX, clickY);
+
+                if (currentMode === 'point') {
+                    points.push({ x: worldPos.x, y: worldPos.y, color: currentColor });
+                } else if (currentMode === 'segment' || currentMode === 'line') {
+                    if (!startPoint) {
+                        startPoint = worldPos;
+                    } else {
+                        if (currentMode === 'segment') {
+                            segments.push({ p1: startPoint, p2: worldPos, color: currentColor });
+                        } else {
+                            lines.push({ p1: startPoint, p2: worldPos, color: currentColor });
+                        }
+                        startPoint = null;
+                    }
+                }
             }
-        })
-        .catch(error => {
-            addLog('system', 'Netzwerkfehler.');
-            alert('Netzwerkfehler beim Übertragen der Daten.');
-        });
-    }
+        }
+        draw();
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    // Zoomen per Mausrad
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+        zoom(factor);
+    }, { passive: false });
+
+    // Zoom Buttons
+    zoomInBtn.addEventListener('click', () => zoom(1.2));
+    zoomOutBtn.addEventListener('click', () => zoom(1 / 1.2));
+
+    // Pfeil-Buttons Steuerung
+    spinUp.addEventListener('click', () => stepGridSize(1));
+    spinDown.addEventListener('click', () => stepGridSize(-1));
+
+    // Tastatur-Navigation im Eingabefeld
+    gridSizeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            stepGridSize(1);
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            stepGridSize(-1);
+        }
+    });
+
+    // Manuelle Eingabe verarbeiten
+    gridSizeInput.addEventListener('input', draw);
+
+    // PNG in Zwischenablage kopieren (Cross-Platform)
+    copyBtn.addEventListener('click', async () => {
+        if (!navigator.clipboard || !window.ClipboardItem) {
+            alert('Die Zwischenablage-Funktion benötigt eine sichere Verbindung (HTTPS oder localhost).');
+            return;
+        }
+
+        try {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(canvas, 0, 0);
+
+            const blobPromise = new Promise(resolve => tempCanvas.toBlob(resolve, 'image/png'));
+            const item = new ClipboardItem({ 'image/png': blobPromise });
+
+            await navigator.clipboard.write([item]);
+            
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = '✓ Kopiert!';
+            setTimeout(() => {
+                copyBtn.innerText = originalText;
+            }, 2000);
+
+        } catch (err) {
+            console.error('Fehler beim Kopieren:', err);
+            alert('Kopieren fehlgeschlagen. Bitte stelle sicher, dass die Seite über HTTPS aufgerufen wird.');
+        }
+    });
+
+    // PNG Download-Funktion
+    downloadBtn.addEventListener('click', () => {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.drawImage(canvas, 0, 0);
+
+        const link = document.createElement('a');
+        link.download = 'koordinatensystem.png';
+        link.href = tempCanvas.toDataURL('image/png');
+        link.click();
+    });
+
+    // Alles löschen
+    clearBtn.addEventListener('click', () => {
+        points = [];
+        segments = [];
+        lines = [];
+        startPoint = null;
+        draw();
+    });
+
+    // Initialisierung
+    resizeCanvas();
 </script>
 
 </body>
