@@ -35,8 +35,54 @@
             padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             z-index: 10;
+            overflow-y: auto;
+        }
+
+        /* Parabel-Eingabe (Scheitelpunktform) */
+        .formula-hint {
+            font-size: 13px;
+            color: #333;
+            font-family: "Times New Roman", serif;
+            font-style: italic;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 4px;
+        }
+        .param-row {
+            display: flex;
+            gap: 6px;
+        }
+        .param-field {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .param-field span {
+            font-size: 13px;
+            font-family: "Times New Roman", serif;
+            font-style: italic;
+            font-weight: bold;
+            color: #444;
+        }
+        .param-field input[type="text"] {
+            min-width: 0;
+            padding: 5px 4px;
+            text-align: center;
+        }
+        .param-field input.invalid {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+        #parabolaTerm {
+            font-size: 13px;
+            font-family: "Times New Roman", serif;
+            text-align: center;
+            color: #222;
+            min-height: 16px;
         }
         .control-group {
             display: flex;
@@ -166,7 +212,7 @@
 
         .tool-btn, .action-btn {
             width: 100%;
-            padding: 8px 10px;
+            padding: 6px 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
             background: #fff;
@@ -183,13 +229,13 @@
         .tool-btn.active {
             border: 3px solid #333333;
             font-weight: bold;
-            padding: 6px 8px;
+            padding: 4px 8px;
         }
 
         .zoom-btn {
             flex: 1;
             font-weight: bold;
-            padding: 6px;
+            padding: 4px;
             text-align: center;
         }
         .btn-danger {
@@ -292,13 +338,28 @@
                 </div>
             </div>
 
-            <div style="height: 5px;"></div>
+            <div style="height: 2px;"></div>
 
             <!-- Zeichnen-Werkzeuge -->
             <button class="tool-btn" data-mode="point">Punkt setzen</button>
             <button class="tool-btn" data-mode="segment">Strecke zeichnen</button>
             <button class="tool-btn" data-mode="line">Gerade zeichnen</button>
             <button class="tool-btn" data-mode="delete">Objekt löschen</button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 2px 0;">
+
+        <!-- PARABEL (Scheitelpunktform) -->
+        <div class="control-group" id="parabolaGroup">
+            <label>Parabel:</label>
+            <div class="formula-hint">f(x) = a · (x − d)² + e</div>
+            <div class="param-row">
+                <div class="param-field"><span>a</span><input type="text" id="paramA" value="1"></div>
+                <div class="param-field"><span>d</span><input type="text" id="paramD" value="0"></div>
+                <div class="param-field"><span>e</span><input type="text" id="paramE" value="0"></div>
+            </div>
+            <div id="parabolaTerm"></div>
+            <button id="addParabolaBtn" class="action-btn btn-secondary">Parabel zeichnen</button>
         </div>
 
         <hr style="border: 0; border-top: 1px solid #eee; margin: 2px 0;">
@@ -379,6 +440,15 @@
     let points = [];
     let segments = [];
     let lines = [];
+    let parabolas = []; // { a, d, e, color } für f(x) = a(x − d)² + e
+
+    // Parabel-Bedienelemente
+    const paramA = document.getElementById('paramA');
+    const paramD = document.getElementById('paramD');
+    const paramE = document.getElementById('paramE');
+    const parabolaTerm = document.getElementById('parabolaTerm');
+    const addParabolaBtn = document.getElementById('addParabolaBtn');
+    const paramInputs = [paramA, paramD, paramE];
 
     // Formatiert Zahlen mit Komma als Dezimaltrenner
     function formatNumber(num, decimals = 2) {
@@ -504,6 +574,104 @@
         draw();
     }
 
+    // --- PARABELN ---
+
+    // Liest eine Zahl ein: akzeptiert Komma, Minuszeichen (− oder -) und Brüche wie 1/2
+    function parseParam(str) {
+        const s = str.trim().replace(/\s+/g, '').replace(/,/g, '.').replace(/[−–]/g, '-');
+        if (s === '') return NaN;
+        const frac = s.match(/^([+-]?\d*\.?\d+)\/([+-]?\d*\.?\d+)$/);
+        if (frac) {
+            const den = Number(frac[2]);
+            return den === 0 ? NaN : Number(frac[1]) / den;
+        }
+        return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : NaN;
+    }
+
+    // Liest a, d, e aus den Feldern; markiert ungültige Felder rot. Gibt null zurück, falls ungültig.
+    function getParabolaParams() {
+        const values = paramInputs.map(inp => parseParam(inp.value));
+        paramInputs.forEach((inp, i) => inp.classList.toggle('invalid', isNaN(values[i])));
+        if (values.some(v => isNaN(v))) return null;
+        return { a: values[0], d: values[1], e: values[2] };
+    }
+
+    // Erzeugt den lesbaren Funktionsterm, z. B. f(x) = −2(x + 1)² + 3
+    function parabolaTermText(p) {
+        const fmt = (n) => formatNumber(n, 4);
+        if (p.a === 0) return `f(x) = ${fmt(p.e).replace('-', '−')}`;
+
+        let factor = '';
+        if (p.a === -1) factor = '−';
+        else if (p.a !== 1) factor = fmt(p.a).replace('-', '−');
+
+        let square;
+        if (p.d === 0) square = 'x²';
+        else if (p.d > 0) square = `(x − ${fmt(p.d)})²`;
+        else square = `(x + ${fmt(-p.d)})²`;
+
+        let shift = '';
+        if (p.e > 0) shift = ` + ${fmt(p.e)}`;
+        else if (p.e < 0) shift = ` − ${fmt(-p.e)}`;
+
+        return `f(x) = ${factor}${square}${shift}`;
+    }
+
+    function updateParabolaTerm() {
+        const p = getParabolaParams();
+        parabolaTerm.innerText = p ? parabolaTermText(p) : 'Ungültige Eingabe';
+        parabolaTerm.style.color = p ? '#222' : '#dc3545';
+        addParabolaBtn.disabled = !p;
+    }
+
+    // Zeichnet die Parabel pixelweise über die gesamte Canvas-Breite
+    function drawParabola(p, color, dashed = false) {
+        const f = (x) => p.a * (x - p.d) ** 2 + p.e;
+        const limit = canvas.height * 10; // weit außerhalb liegende Punkte abschneiden
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        if (dashed) ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        let penDown = false;
+        for (let sx = -1; sx <= canvas.width + 1; sx += 1) {
+            const wx = (sx - offsetX) / scale;
+            const sy = offsetY - f(wx) * scale;
+            if (sy < -limit || sy > limit) { penDown = false; continue; }
+            if (penDown) ctx.lineTo(sx, sy);
+            else { ctx.moveTo(sx, sy); penDown = true; }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Abstand (in Pixeln) eines Bildschirmpunkts zur Parabel, über kleine Umgebung abgetastet
+    function screenDistToParabola(sx0, sy0, p, radius) {
+        let best = Infinity;
+        for (let sx = sx0 - radius; sx <= sx0 + radius; sx += 0.5) {
+            const wx = (sx - offsetX) / scale;
+            const sy = offsetY - (p.a * (wx - p.d) ** 2 + p.e) * scale;
+            best = Math.min(best, Math.hypot(sx - sx0, sy - sy0));
+        }
+        return best;
+    }
+
+    function addParabola() {
+        const p = getParabolaParams();
+        if (!p) return;
+        parabolas.push({ ...p, color: currentColor });
+        draw();
+    }
+
+    paramInputs.forEach(inp => {
+        inp.addEventListener('input', () => { updateParabolaTerm(); draw(); });
+        inp.addEventListener('focus', draw);
+        inp.addEventListener('blur', draw);
+        inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); addParabola(); }
+        });
+    });
+    addParabolaBtn.addEventListener('click', addParabola);
+
     // --- LÖSCH-MATHEMATIK ---
     function distToSegment(p, p1, p2) {
         const l2 = Math.hypot(p2.x - p1.x, p2.y - p1.y);
@@ -543,6 +711,13 @@
         for (let i = lines.length - 1; i >= 0; i--) {
             if (distToLine(clickWorld, lines[i].p1, lines[i].p2) <= thresholdWorld) {
                 lines.splice(i, 1);
+                return true;
+            }
+        }
+
+        for (let i = parabolas.length - 1; i >= 0; i--) {
+            if (screenDistToParabola(screenX, screenY, parabolas[i], thresholdPixel) <= thresholdPixel) {
+                parabolas.splice(i, 1);
                 return true;
             }
         }
@@ -678,6 +853,15 @@
             ctx.lineTo(ext.p2.x, ext.p2.y);
             ctx.stroke();
         });
+
+        // 4b. Parabeln zeichnen
+        parabolas.forEach(p => drawParabola(p, p.color));
+
+        // Gestrichelte Vorschau, solange ein Parabel-Feld bearbeitet wird
+        if (paramInputs.includes(document.activeElement)) {
+            const preview = getParabolaParams();
+            if (preview) drawParabola(preview, currentColor, true);
+        }
 
         // Vorschau-Linie beim Zeichnen
         if (startPoint && (currentMode === 'line' || currentMode === 'segment')) {
@@ -859,11 +1043,13 @@
         points = [];
         segments = [];
         lines = [];
+        parabolas = [];
         startPoint = null;
         draw();
     });
 
     // Initialisierung
+    updateParabolaTerm();
     resizeCanvas();
 </script>
 
